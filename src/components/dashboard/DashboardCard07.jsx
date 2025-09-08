@@ -14,7 +14,7 @@ function DashboardCard07() {
             <thead className="text-xs uppercase text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-700/50 rounded-xs">
               <tr>
                 <th className="p-2">
-                  <div className="font-semibold text-left">Source</div>
+                  <div className="font-semibold text-left"></div>
                 </th>
                 <th className="p-2">
                   <div className="font-semibold text-center">Visitors</div>

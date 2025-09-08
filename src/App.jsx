@@ -6,30 +6,39 @@ import {
 } from 'react-router-dom';
 
 import './css/style.css';
-
 import './charts/ChartjsConfig';
 
-// Import pages
+// Pages
 import Dashboard from './pages/Dashboard';
 import Demande from './pages/Demande';
 import Login from './pages/Login';
 
-function App() {
+// Layouts
+import MainLayout from './layouts/MainLayout';
+import AuthLayout from './layouts/AuthLayout';
 
+function App() {
   const location = useLocation();
 
   useEffect(() => {
-    document.querySelector('html').style.scrollBehavior = 'auto'
-    window.scroll({ top: 0 })
-    document.querySelector('html').style.scrollBehavior = ''
-  }, [location.pathname]); // triggered on route change
+    document.querySelector('html').style.scrollBehavior = 'auto';
+    window.scroll({ top: 0 });
+    document.querySelector('html').style.scrollBehavior = '';
+  }, [location.pathname]);
 
   return (
     <>
       <Routes>
-        <Route exact path="/" element={<Dashboard />} />
-        <Route exact path="/demande" element={<Demande />} />
-        <Route exact path="/login" element={<Login />} />
+        {/* Routes avec layout principal */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/demande" element={<Demande />} />
+        </Route>
+
+        {/* Route login sans layout */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+        </Route>
       </Routes>
     </>
   );

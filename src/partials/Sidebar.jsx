@@ -99,7 +99,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
             <div className="flex items-center">
               <NavLink end to="/" className="flex items-center">
                 <img src={logo} alt="BNI" className="h-10 w-auto" />
-                <h1 className="ml-3 text-xs text-gray-600 font-semibold dark:text-white hidden sm:block">
+                <h1 className="ml-3 text-xs text-gray-600 font-semibold dark:text-white hidden sm:block hidden:md">
                   {VITE_ENTREPRISE_NAME}
                 </h1>
               </NavLink>
