@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useEffect } from 'react';
 import {
   Routes,
@@ -8,14 +9,15 @@ import {
 import './css/style.css';
 import './charts/ChartjsConfig';
 
-// Pages
 import Dashboard from './pages/Dashboard';
 import Demande from './pages/Demande';
 import Login from './pages/Login';
 
-// Layouts
 import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
+
+import { AuthProvider } from './layouts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const location = useLocation();
@@ -27,12 +29,26 @@ function App() {
   }, [location.pathname]);
 
   return (
-    <>
+    <AuthProvider>
       <Routes>
-        {/* Routes avec layout principal */}
+        {/* Routes protégées avec layout principal */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/demande" element={<Demande />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/demande"
+            element={
+              <ProtectedRoute>
+                <Demande />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* Route login sans layout */}
@@ -40,7 +56,7 @@ function App() {
           <Route path="/login" element={<Login />} />
         </Route>
       </Routes>
-    </>
+    </AuthProvider>
   );
 }
 
