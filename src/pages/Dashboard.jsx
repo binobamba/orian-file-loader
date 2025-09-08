@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 
-import DashboardCard01 from '../components/dashboard/DashboardCard01';
-import DashboardCard02 from '../components/dashboard/DashboardCard02';
-import DashboardCard03 from '../components/dashboard/DashboardCard03';
-import DashboardCard04 from '../components/dashboard/DashboardCard04';
-import DashboardCard05 from '../components/dashboard/DashboardCard05';
-import DashboardCard06 from '../components/dashboard/DashboardCard06';
-import DashboardCard08 from '../components/dashboard/DashboardCard08';
-import DashboardCard09 from '../components/dashboard/DashboardCard09';
-import DashboardCard10 from '../components/dashboard/DashboardCard10';
-import DashboardCard11 from '../components/dashboard/DashboardCard11';
-import DashboardCard12 from '../components/dashboard/DashboardCard12';
-import DashboardCard13 from '../components/dashboard/DashboardCard13';
+import DashboardCard01 from '../components/ui/DashboardCard01';
+import DashboardCard02 from '../components/ui/DashboardCard02';
+import DashboardCard03 from '../components/ui/DashboardCard03';
+import DashboardCard04 from '../components/ui/DashboardCard04';
+import DashboardCard05 from '../components/ui/DashboardCard05';
+import DashboardCard06 from '../components/ui/DashboardCard06';
+import DashboardCard08 from '../components/ui/DashboardCard08';
+import DashboardCard09 from '../components/ui/DashboardCard09';
+import DashboardCard10 from '../components/ui/DashboardCard10';
+import DashboardCard11 from '../components/ui/DashboardCard11';
+import DashboardCard12 from '../components/ui/DashboardCard12';
+import DashboardCard13 from '../components/ui/DashboardCard13';
 // importer tableau
 
 function Dashboard() {

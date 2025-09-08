@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import DashboardCard07 from '../components/dashboard/DashboardCard07';
-
-
-
+import DashboardCard07 from '../components/ui/DashboardCard07';
 
 export default function Demande() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
