@@ -16,24 +16,53 @@ import NotFound from './pages/NotFound';
 function App() {
   const location = useLocation();
 
+  // Remonter en haut à chaque changement de route
   useEffect(() => {
-    document.querySelector('html').style.scrollBehavior = 'auto';
+    const html = document.querySelector('html');
+    html.style.scrollBehavior = 'auto';
     window.scroll({ top: 0 });
-    document.querySelector('html').style.scrollBehavior = '';
+    html.style.scrollBehavior = '';
   }, [location.pathname]);
 
   return (
     <AuthProvider>
       <Routes>
+        {/* Layout principal (après connexion) */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/demande" element={<ProtectedRoute><Demande /></ProtectedRoute>} />
+          {/* Rediriger / vers /demandes par défaut */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/demandes" replace />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/demandes"
+            element={
+              <ProtectedRoute>
+                <Demande />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
+        {/* Layout d’authentification */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
         </Route>
 
+        {/* Layout des erreurs */}
         <Route element={<ErrorLayout />}>
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />

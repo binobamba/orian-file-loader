@@ -56,19 +56,9 @@ function Header({
           </div>
 
           {/* Header: Right side */}
-          <div className="flex items-center space-x-4">
-            {/* Barre de recherche simplifiée */}
-            <button 
-              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-              aria-label="Rechercher"
-            >
-              <FaSearch className="w-4 h-4" />
-            </button>
-            
+          <div className="flex items-center space-x-4">            
             <ThemeToggle />
-            
             <div className="border-l border-gray-200 dark:border-gray-700 h-6 mx-2"></div>
-            
             <UserMenu align="right" />
           </div>
         </div>

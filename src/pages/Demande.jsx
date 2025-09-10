@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import DashboardCard07 from '../components/ui/DashboardCard07';
+import { Button } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 
 export default function Demande() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -8,16 +10,37 @@ export default function Demande() {
       <div className="w-full">
         {/* DEBUT CARD */}
 
-          <div className="col-span-full xl:col-span-8 bg-white dark:bg-gray-800 shadow-xs rounded-xl">
-              <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
-                <h2 className="font-semibold text-gray-800  bg-gradi dark:text-gray-100"> LISTE DES FICHIERS</h2>
-              </header>
+          <div className="col-span-full mt-3 xl:col-span-8 bg-white dark:bg-gray-800 shadow-xs  h-[89vh] overflow-y-auto mb-4 border-2 rounded-md">
+             
+          <header className="px-6 py-1 bg-green-900 dark:bg-gray-800 rounded-md">
+          <div className="flex items-center justify-between">
+            {/* Caché en mobile, visible seulement à partir de md */}
+            <h2 className="hidden md:block text-2xl font-bold text-white drop-shadow-md">
+              📁 LISTE DES DEMANDES
+            </h2>
+
+            {/* Visible seulement en mobile */}
+            <h2 className="block md:hidden text-2xl font-bold text-white drop-shadow-md">
+              📁
+            </h2>
+
+            <button
+          type="button"
+          className="bg-white text-green-900 hover:bg-orange-600 hover:text-white focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-2 py-2 text-center transition-colors duration-200"
+        >
+          <PlusOutlined /> Nouvelle demande
+        </button>
+          </div>
+        </header>
+
+
+
               <div className="p-3">
                 {/* Table */}
                 <div className="overflow-x-auto">
                   <table className="table-auto w-full dark:text-gray-300">
                     {/* Table header */}
-                    <thead className="text-xs uppercase text-white dark:text-white bg-green-600 dark:bg-gray-700/50 rounded-xs">
+                    <thead className="text-xs uppercase text-white dark:text-white bg-green-600 dark:bg-gray-700/50 rounded-md">
                       <tr>
                         <th className="p-2">
                           <div className="font-semibold text-left">ID</div>

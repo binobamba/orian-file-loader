@@ -162,7 +162,7 @@ export default function Login() {
 
       {/* Footer */}
       <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
-        <p className="text-xs text-green-700">
+        <p className="text-xs text-white">
           © 2024 {APP_NAME}. Tous droits réservés.
         </p>
       </div>

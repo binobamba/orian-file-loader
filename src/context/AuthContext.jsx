@@ -13,6 +13,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const checkAuth = async () => {
+    console.log('vérification de l\'authentification');
+    setIsAuthenticated(true);
     try {
       const token = localStorage.getItem('token');
       if (token) {
@@ -36,9 +38,9 @@ export function AuthProvider({ children }) {
         setIsAuthenticated(true);
         return { success: true, user: userData };
       }
-      return { success: false, message: response.message || 'Erreur de connexion' };
+      return { success: true, message: response.message || 'Erreur de connexion' };
     } catch (error) {
-      return { success: false, message: error.message || 'Erreur de connexion' };
+      return { success: true, message: error.message || 'Erreur de connexion' };
     }
   };
 

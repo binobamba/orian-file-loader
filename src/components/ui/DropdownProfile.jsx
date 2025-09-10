@@ -1,23 +1,30 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Transition from '../../utils/Transition';
 import { FaUserCircle, FaSignOutAlt, FaUserCog } from 'react-icons/fa';
 import { FaAngleDown } from 'react-icons/fa6';
+import { api } from '../../services/api';
 
 function DropdownProfile({ align = 'right' }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userData, setUserData] = useState({});
   const trigger = useRef(null);
   const dropdown = useRef(null);
-  const navigate = useNavigate();
 
-  // Données utilisateur (à remplacer par des données réelles)
-  const userData = {
-    nom: "BAMBA",
-    prenoms: "FULGENCE",
-    code: "m1321",
-    isUser: true,
-    email: "fulgence.bamba@example.com"
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userData = await api.getLocalProfile();
+        console.log(userData);
+        setUserData(userData);
+      } catch (error) {
+        console.error("Erreur lors de la récupération du profil :", error);
+      }
+    };
+  
+    fetchData();
+  }, []);
+  
 
   // Fermer le dropdown en cliquant à l'extérieur
   useEffect(() => {
@@ -43,14 +50,6 @@ function DropdownProfile({ align = 'right' }) {
     document.addEventListener('keydown', keyHandler);
     return () => document.removeEventListener('keydown', keyHandler);
   }, [dropdownOpen]);
-
-  // Gérer la déconnexion
-  const handleSignOut = useCallback(() => {
-    setDropdownOpen(false);
-    // Ajouter ici la logique de déconnexion
-    // Par exemple : suppression du token, réinitialisation du state global
-    navigate('/signin');
-  }, [navigate]);
 
   return (
     <div className="relative inline-flex">
@@ -108,9 +107,6 @@ function DropdownProfile({ align = 'right' }) {
             <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
               {userData.nom} {userData.prenoms}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {userData.email}
-            </p>
             <p className="text-xs mt-1 text-gray-500 dark:text-gray-400 italic">
               {userData.isUser ? "Utilisateur" : "Administrateur"} • {userData.code}
             </p>
@@ -142,7 +138,7 @@ function DropdownProfile({ align = 'right' }) {
           <div className="py-2">
             <button
               className="flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
-              onClick={handleSignOut}
+              onClick={api.logout}
               role="menuitem"
             >
               <FaSignOutAlt className="w-4 h-4 mr-3" aria-hidden="true" />
