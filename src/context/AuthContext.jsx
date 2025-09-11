@@ -13,7 +13,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   const checkAuth = async () => {
-    console.log('vérification de l\'authentification');
     setIsAuthenticated(true);
     try {
       const token = localStorage.getItem('token');

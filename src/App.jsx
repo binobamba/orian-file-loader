@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import './assets/css/style.css';
+import './assets/antStyle.css';
 import './components/charts/ChartjsConfig';
 
 import { AuthProvider } from './context/AuthContext';
@@ -12,6 +13,7 @@ import Dashboard from './pages/Dashboard';
 import Demande from './pages/Demande';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
+import UserRole from './pages/User-Role';
 
 function App() {
   const location = useLocation();
@@ -29,7 +31,7 @@ function App() {
       <Routes>
         {/* Layout principal (après connexion) */}
         <Route element={<MainLayout />}>
-          {/* Rediriger / vers /demandes par défaut */}
+
           <Route
             path="/"
             element={
@@ -47,6 +49,18 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* ==================== USERS MANAGEMENT and ROLES ==================== */}
+          <Route
+            path="/user-role"
+            element={
+              <ProtectedRoute>
+                <UserRole />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ==================== DEMANDES MANAGERS ==================== */}
+
           <Route
             path="/demandes"
             element={

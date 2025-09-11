@@ -1,215 +1,426 @@
-import React, { useState } from 'react';
-import DashboardCard07 from '../components/ui/DashboardCard07';
-import { Button } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaEdit, FaPlus, FaSearch, FaTimes, FaSync } from 'react-icons/fa';
+import { api } from '../services/api';
+import {
+  BeautifulTable,
+  usePagination
+} from '../components/my-ui/Table';
+import { Button } from '../components/my-ui/Button';
+import { Card } from '../components/my-ui/Card';
+import ModalDemande from './partial-demande/ModalDemande';
 
 export default function Demande() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  
-    return (
-      <div className="w-full">
-        {/* DEBUT CARD */}
+  const [data, setData] = useState({
+    content: [],
+    totalPages: 0,
+    totalElements: 0,
+    number: 0,
+    size: 10
+  });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-          <div className="col-span-full mt-3 xl:col-span-8 bg-white dark:bg-gray-800 shadow-xs  h-[89vh] overflow-y-auto mb-4 border-2 rounded-md">
-             
-          <header className="px-6 py-1 bg-green-900 dark:bg-gray-800 rounded-md">
-          <div className="flex items-center justify-between">
-            {/* Caché en mobile, visible seulement à partir de md */}
-            <h2 className="hidden md:block text-2xl font-bold text-white drop-shadow-md">
-              📁 LISTE DES DEMANDES
-            </h2>
+  // États pour les champs de recherche
+  const [searchReference, setSearchReference] = useState('');
+  const [searchOperationStatus, setSearchOperationStatus] = useState('');
+  const [searchCreatedById, setSearchCreatedById] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-            {/* Visible seulement en mobile */}
-            <h2 className="block md:hidden text-2xl font-bold text-white drop-shadow-md">
-              📁
-            </h2>
+  const pagination = usePagination(1, 10);
 
-            <button
-          type="button"
-          className="bg-white text-green-900 hover:bg-orange-600 hover:text-white focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-2 py-2 text-center transition-colors duration-200"
-        >
-          <PlusOutlined /> Nouvelle demande
-        </button>
-          </div>
-        </header>
+  // États pour les modales
+  const [modalConfig, setModalConfig] = useState({
+    visible: false,
+    mode: 'create',
+    demandeId: null
+  });
 
+  // Configuration des statuts
+  const getStatusConfig = (status) => {
+    const statusConfigs = {
+      'VALIDEE': {
+        label: 'VALIDÉE',
+        color: 'green'
+      },
+      'NON_VALIDEE': {
+        label: 'NON VALIDÉE',
+        color: 'red'
+      },
+      'EN_TRAITEMENT': {
+        label: 'EN TRAITEMENT',
+        color: 'blue'
+      }
+    };
 
+    const config = statusConfigs[status];
+    if (config) {
+      return config;
+    }
+    
+    return {
+      label: status,
+      color: 'gray'
+    };
+  };
 
-              <div className="p-3">
-                {/* Table */}
-                <div className="overflow-x-auto">
-                  <table className="table-auto w-full dark:text-gray-300">
-                    {/* Table header */}
-                    <thead className="text-xs uppercase text-white dark:text-white bg-green-600 dark:bg-gray-700/50 rounded-md">
-                      <tr>
-                        <th className="p-2">
-                          <div className="font-semibold text-left">ID</div>
-                        </th>
-                        <th className="p-2">
-                          <div className="font-semibold text-center">reference</div>
-                        </th>
-                        <th className="p-2">
-                          <div className="font-semibold text-center">DebitAmount</div>
-                        </th>
-                        <th className="p-2">
-                          <div className="font-semibold text-center">creditAmount</div>
-                        </th>
-                        <th className="p-2">
-                          <div className="font-semibold text-center">status</div>
-                        </th>
-                        <th className="p-2">
-                          <div className="font-semibold text-center">ACTION</div>
-                        </th>
-                      </tr>
-                    </thead>
-                    {/* Table body */}
-                    <tbody className="text-sm font-medium divide-y divide-gray-100 dark:divide-gray-700/60">
-                      {/* Row */}
-                      <tr>
-                        <td className="p-2">
-                          <div className="flex items-center">
-                            <svg className="shrink-0 mr-2 sm:mr-3" width="36" height="36" viewBox="0 0 36 36">
-                              <circle fill="#24292E" cx="18" cy="18" r="18" />
-                              <path
-                                d="M18 10.2c-4.4 0-8 3.6-8 8 0 3.5 2.3 6.5 5.5 7.6.4.1.5-.2.5-.4V24c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8.6-.2 1.3-.3 2-.3s1.4.1 2 .3c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.7-3.7 3.9.3.4.6.9.6 1.6v2.2c0 .2.1.5.6.4 3.2-1.1 5.5-4.1 5.5-7.6-.1-4.4-3.7-8-8.1-8z"
-                                fill="#FFF"
-                              />
-                            </svg>
-                            <div className="text-gray-800 dark:text-gray-100">Github.com</div>
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">2.4K</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-green-500">$3,877</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">267</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-sky-500">4.7%</div>
-                        </td>
-                      </tr>
-                      {/* Row */}
-                      <tr>
-                        <td className="p-2">
-                          <div className="flex items-center">
-                            <svg className="shrink-0 mr-2 sm:mr-3" width="36" height="36" viewBox="0 0 36 36">
-                              <circle fill="#1877F2" cx="18" cy="18" r="18" />
-                              <path
-                                d="M16.023 26 16 19h-3v-3h3v-2c0-2.7 1.672-4 4.08-4 1.153 0 2.144.086 2.433.124v2.821h-1.67c-1.31 0-1.563.623-1.563 1.536V16H23l-1 3h-2.72v7h-3.257Z"
-                                fill="#FFF"
-                                fillRule="nonzero"
-                              />
-                            </svg>
-                            <div className="text-gray-800 dark:text-gray-100">Facebook</div>
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">2.2K</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-green-500">$3,426</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">249</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-sky-500">4.4%</div>
-                        </td>
-                      </tr>
-                      {/* Row */}
-                      <tr>
-                        <td className="p-2">
-                          <div className="flex items-center">
-                            <svg className="shrink-0 mr-2 sm:mr-3" width="36" height="36" viewBox="0 0 36 36">
-                              <circle fill="#EA4335" cx="18" cy="18" r="18" />
-                              <path
-                                d="M18 17v2.4h4.1c-.2 1-1.2 3-4 3-2.4 0-4.3-2-4.3-4.4 0-2.4 2-4.4 4.3-4.4 1.4 0 2.3.6 2.8 1.1l1.9-1.8C21.6 11.7 20 11 18.1 11c-3.9 0-7 3.1-7 7s3.1 7 7 7c4 0 6.7-2.8 6.7-6.8 0-.5 0-.8-.1-1.2H18z"
-                                fill="#FFF"
-                                fillRule="nonzero"
-                              />
-                            </svg>
-                            <div className="text-gray-800 dark:text-gray-100">Google (organic)</div>
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">2.0K</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-green-500">$2,444</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">224</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-sky-500">4.2%</div>
-                        </td>
-                      </tr>
-                      {/* Row */}
-                      <tr>
-                        <td className="p-2">
-                          <div className="flex items-center">
-                            <svg className="shrink-0 mr-2 sm:mr-3" width="36" height="36" viewBox="0 0 36 36">
-                              <circle fill="#4BC9FF" cx="18" cy="18" r="18" />
-                              <path
-                                d="M26 14.3c-.1 1.6-1.2 3.7-3.3 6.4-2.2 2.8-4 4.2-5.5 4.2-.9 0-1.7-.9-2.4-2.6C14 19.9 13.4 15 12 15c-.1 0-.5.3-1.2.8l-.8-1c.8-.7 3.5-3.4 4.7-3.5 1.2-.1 2 .7 2.3 2.5.3 2 .8 6.1 1.8 6.1.9 0 2.5-3.4 2.6-4 .1-.9-.3-1.9-2.3-1.1.8-2.6 2.3-3.8 4.5-3.8 1.7.1 2.5 1.2 2.4 3.3z"
-                                fill="#FFF"
-                                fillRule="nonzero"
-                              />
-                            </svg>
-                            <div className="text-gray-800 dark:text-gray-100">Vimeo.com</div>
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">1.9K</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-green-500">$2,236</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">220</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-sky-500">4.2%</div>
-                        </td>
-                      </tr>
-                      {/* Row */}
-                      <tr>
-                        <td className="p-2">
-                          <div className="flex items-center">
-                            <svg className="shrink-0 mr-2 sm:mr-3" width="36" height="36" viewBox="0 0 36 36">
-                              <circle fill="#0E2439" cx="18" cy="18" r="18" />
-                              <path
-                                d="M14.232 12.818V23H11.77V12.818h2.46zM15.772 23V12.818h2.462v4.087h4.012v-4.087h2.456V23h-2.456v-4.092h-4.012V23h-2.461z"
-                                fill="#E6ECF4"
-                              />
-                            </svg>
-                            <div className="text-gray-800 dark:text-gray-100">Indiehackers.com</div>
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">1.7K</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-green-500">$2,034</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center">204</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="text-center text-sky-500">3.9%</div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+  const fetchDemandeData = async (page = 1, pageSize = 10, filters = {}) => {
+    try {
+      setLoading(true);
+      const searchData = {
+        reference: filters.reference || '',
+        operationStatus: filters.operationStatus || '',
+        createdById: filters.createdById || null,
+        startDate: filters.startDate || null,
+        endDate: filters.endDate || null,
+        page: page - 1,
+        size: pageSize
+      };
+
+      const response = await api.searchIntegrationRequests(searchData);
+      const responseData = response.data || response;
+
+      setData({
+        content: responseData.content || [],
+        totalPages: responseData.totalPages || 0,
+        totalElements: responseData.totalElements || 0,
+        number: responseData.number || 0,
+        size: responseData.size || 10
+      });
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      setData({
+        content: [],
+        totalPages: 0,
+        totalElements: 0,
+        number: 0,
+        size: 10
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatAmount = (amount) => {
+    return new Intl.NumberFormat('fr-FR').format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    pagination.goToPage(1);
+    fetchDemandeData(1, pagination.pageSize, {
+      reference: searchReference,
+      operationStatus: searchOperationStatus,
+      createdById: searchCreatedById,
+      startDate: startDate,
+      endDate: endDate
+    });
+  };
+
+  const handleClearSearch = () => {
+    setSearchReference('');
+    setSearchOperationStatus('');
+    setSearchCreatedById('');
+    setStartDate('');
+    setEndDate('');
+    pagination.goToPage(1);
+    fetchDemandeData(1, pagination.pageSize, {});
+  };
+
+  const handlePageChange = (page) => {
+    pagination.goToPage(page);
+    fetchDemandeData(page, pagination.pageSize, {
+      reference: searchReference,
+      operationStatus: searchOperationStatus,
+      createdById: searchCreatedById,
+      startDate: startDate,
+      endDate: endDate
+    });
+  };
+
+  // Gestion des modales
+  const showModal = (mode, demandeId = null) => {
+    setModalConfig({
+      visible: true,
+      mode,
+      demandeId
+    });
+  };
+
+  const hideModal = () => {
+    setModalConfig({
+      visible: false,
+      mode: 'create',
+      demandeId: null
+    });
+  };
+
+  const handleModalSuccess = () => {
+    hideModal();
+    fetchDemandeData(pagination.currentPage, pagination.pageSize, {
+      reference: searchReference,
+      operationStatus: searchOperationStatus,
+      createdById: searchCreatedById,
+      startDate: startDate,
+      endDate: endDate
+    });
+  };
+
+  useEffect(() => {
+    fetchDemandeData(pagination.currentPage, pagination.pageSize, {});
+  }, [pagination.currentPage, pagination.pageSize]);
+
+  const hasActiveFilters = searchReference || searchOperationStatus || searchCreatedById || startDate || endDate;
+
+  return (
+    <>
+      <Card
+        title="GESTION DES DEMANDES"
+        addBouton={true}
+        addBoutonText="Nouvelle demande"
+        onClickAddButton={() => showModal('create')}
+        icon={<FaPlus className="inline mr-1" />}
+      >
+        {/* Barre de recherche avancée */}
+        <div className="bg-gray-50 dark:bg-gray-800 pt-4 pb-2 px-4">
+          <form onSubmit={handleSearch} className="space-y-3 md:space-y-0">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+              {/* Champ référence */}
+              <div>
+                <label
+                  htmlFor="reference"
+                  className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Référence
+                </label>
+                <input
+                  type="text"
+                  id="reference"
+                  placeholder="Référence"
+                  value={searchReference}
+                  onChange={(e) => setSearchReference(e.target.value)}
+                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
               </div>
+
+              {/* Champ statut opération */}
+              <div>
+                <label
+                  htmlFor="operationStatus"
+                  className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Statut Opération
+                </label>
+                <select
+                  id="operationStatus"
+                  value={searchOperationStatus}
+                  onChange={(e) => setSearchOperationStatus(e.target.value)}
+                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="">TOUS LES STATUTS</option>
+                  <option value="VALIDEE">VALIDEE</option>
+                  <option value="NON_VALIDEE">NON VALIDE</option>
+                  <option value="EN_TRAITEMENT">EN TRAITEMENT</option>
+                </select>
+              </div>
+
+              {/* Champ ID créateur */}
+              <div>
+                <label
+                  htmlFor="createdById"
+                  className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  ID Créateur
+                </label>
+                <input
+                  type="text"
+                  id="createdById"
+                  placeholder="ID du créateur"
+                  value={searchCreatedById}
+                  onChange={(e) => setSearchCreatedById(e.target.value)}
+                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+
+              {/* Champ date de début */}
+              <div>
+                <label
+                  htmlFor="startDate"
+                  className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Date de début
+                </label>
+                <input
+                  type="date"
+                  id="startDate"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+
+              {/* Champ date de fin */}
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Date de fin
+                </label>
+                <input
+                  type="date"
+                  id="endDate"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* Boutons de recherche */}
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                className="px-3 py-1 text-md rounded-md bg-orange-600 text-white hover:bg-orange-700 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+              >
+                <FaSearch className="inline mr-1" />
+                Rechercher
+              </button>
+
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="px-3 py-1 text-md rounded-md bg-gray-500 text-white hover:bg-gray-600"
+                >
+                  <FaTimes className="inline mr-1" />
+                  Effacer
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">Chargement...</p>
           </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <BeautifulTable
+              headers={[
+                { label: "Référence", align: "left", className: "whitespace-nowrap" },
+                { label: "Débit", align: "right", className: "whitespace-nowrap" },
+                { label: "Crédit", align: "right", className: "whitespace-nowrap" },
+                { label: "Intégration", align: "center", className: "whitespace-nowrap" },
+                { label: "Opération", align: "center", className: "whitespace-nowrap" },
+                { label: "Créé par", align: "left", className: "whitespace-nowrap" },
+                { label: "Date de création", align: "center", className: "whitespace-nowrap inline-block" },
+                { label: "Actions", align: "center", className: "whitespace-nowrap" }
+              ]}
+              data={data.content}
+              emptyMessage={hasActiveFilters ? "Aucune demande trouvée avec ces critères" : "Aucune demande disponible"}
+              pagination={{
+                currentPage: data.number + 1,
+                totalPages: data.totalPages,
+                totalElements: data.totalElements,
+                pageSize: data.size,
+                onPageChange: handlePageChange
+              }}
+              renderRow={(record) => (
+                <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="p-2 sm:p-3 text-left text-xs sm:text-sm whitespace-nowrap">
+                    {record.reference}
+                  </td>
+                  <td className="p-2 sm:p-3 text-right text-xs sm:text-sm whitespace-nowrap">
+                    {formatAmount(record.debitAmount)}
+                  </td>
+                  <td className="p-2 sm:p-3 text-right text-xs sm:text-sm whitespace-nowrap">
+                    {formatAmount(record.creditAmount)}
+                  </td>
+                  <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        getStatusConfig(record.integrationStatus).color === 'green' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : getStatusConfig(record.integrationStatus).color === 'red'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          : getStatusConfig(record.integrationStatus).color === 'blue'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                      }`}
+                    >
+                      {getStatusConfig(record.integrationStatus).label}
+                    </span>
+                  </td>
+                  <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        getStatusConfig(record.operationStatus).color === 'green' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : getStatusConfig(record.operationStatus).color === 'red'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          : getStatusConfig(record.operationStatus).color === 'blue'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                      }`}
+                    >
+                      {getStatusConfig(record.operationStatus).label}
+                    </span>
+                  </td>
+                  <td className="p-2 sm:p-3 text-left text-xs sm:text-sm whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {record.createdBy ? (
+                          <>
+                            {record.createdBy.firstName} {record.createdBy.lastName} - ({record.createdBy.matricule})
+                          </>
+                        ) : 'N/A'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+                    {record.createdAt ? formatDate(record.createdAt) : '-'}
+                  </td>
+                  <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+                    <div className="flex space-x-1 justify-center">
+                      <Button 
+                        onClick={() => showModal('edit', record.id)}
+                        size="lg"
+                        variant="outline"
+                        className="text-xs px-2 py-1"
+                        title="Modifier"
+                      >
+                        <FaEdit className="inline h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            />
+          </div>
+        )}
+      </Card>
 
-        {/* FIN CARD */}
-      </div>
-    );
-  } 
-
+      <ModalDemande
+        visible={modalConfig.visible}
+        mode={modalConfig.mode}
+        demandeId={modalConfig.demandeId}
+        onCancel={hideModal}
+        onSuccess={handleModalSuccess}
+      />
+    </>
+  );
+}

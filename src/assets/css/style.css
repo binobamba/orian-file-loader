@@ -135,4 +135,58 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+
+
+  /* Styles personnalisés */
+.ant-layout {
+  min-height: 100vh;
+}
+
+.logo {
+  height: 32px;
+  margin: 16px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.site-layout .site-layout-background {
+  background: #fff;
+}
+
+[data-theme='dark'] .site-layout .site-layout-background {
+  background: #141414;
+}
+
+
+/* Couleur des lignes impaires (gris clair) */
+.row-light {
+  background-color: #dce1e2 !important;
+}
+
+/* Couleur des lignes paires (blanc) */
+.row-dark {
+  background-color: #ffffff !important;
+}
+
+/* Personnalisation du header */
+.ant-table-thead > tr > th {
+  /* background-color: #219e66 !important;  */
+  background-color: #1b179b !important; 
+  color: white !important;
+  text-align: center;
+}
+
+/* Centrer le texte dans les cellules */
+.ant-table-tbody > tr > td {
+  text-align: center;
+}
+
+.custom-modal .ant-modal-close {
+  background-color: #ff4d4f; /* fond rouge par exemple */
+  border-radius: 50%;        /* rond */
+}
+
+.custom-modal .ant-modal-close-x {
+  color: white;              /* couleur du X */
+  font-size: 16px;           /* taille du X */
+}
 }

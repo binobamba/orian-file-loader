@@ -7,7 +7,7 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-500">
       {/* Sidebar */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       
@@ -19,9 +19,9 @@ export default function MainLayout() {
         ></div>
       )}
       
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden dark:bg-gray-500">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="flex-1 p-2">
+        <main className="flex-1 p-2 dark:bg-gray-500">
           <Outlet />
         </main>
       </div>

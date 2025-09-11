@@ -13,6 +13,7 @@ const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Token': `Bearer ${getAuthToken()}`,
   },
 });
 
@@ -21,7 +22,7 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const token = getAuthToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Token = `${token}`;
     }
     return config;
   },
@@ -52,35 +53,18 @@ const showError = (error, defaultMessage = 'Une erreur est survenue') => {
 
 export const api = {
 
-  /**
-   * Méthode générique pour effectuer des requêtes API
-   * @param {string} endpoint - L'endpoint de l'API
-   * @param {Object} options - Les options de la requête
-   * @returns {Promise} La réponse de l'API
-   */
 
   async request(endpoint, options = {}) {
-    try {
-      const response = await axiosInstance({
+    return await axiosInstance({
         url: endpoint,
         method: options.method || 'GET',
         data: options.data,
         params: options.params,
         ...options,
       });
-      return response.data;
-    } catch (error) {
-      throw showError(error, `Erreur lors de la requête ${endpoint}`);
-    }
   },
 
   // ==================== AUTHENTICATION ====================
-
-  /**
-   * Authentifier un utilisateur dans le système
-   * @param {AuthenticateUserDto} credentials - Les credentials de connexion
-   * @returns {Promise<ApiResponse>} La réponse contenant le token
-   */
 
   async login(credentials) {
     try {
@@ -109,10 +93,6 @@ export const api = {
     }
   },
 
-  /**
-   * Déconnecter un utilisateur
-   * @returns {Promise} La réponse de déconnexion
-   */
 
   async logout() {
    if (getAuthToken()) {
@@ -121,16 +101,15 @@ export const api = {
    window.location.href = '/login';
   },
 
-  /**
-   * Récupérer le profil de l'utilisateur connecté
-   * @returns {Promise<User>} Le profil utilisateur
-   */
+
   async getProfile() {
     try {
-      return await this.request('/auth/profile');
+      return await this.request('/users/current-user', {
+        method: 'GET',
+      });
     } catch (error) {
       return data.getProfile;
-      throw showError(error, 'Erreur lors du chargement du profil');
+      // throw showError(error, 'Erreur lors du chargement du profil');
     }
   },
 
@@ -145,14 +124,7 @@ export const api = {
 
   // ==================== ROLES MANAGEMENT ====================
 
-  /**
-   * Rechercher des rôles avec pagination
-   * @param {Object} params - Les paramètres de recherche
-   * @param {string} params.name - Le nom du rôle à rechercher
-   * @param {number} params.page - Le numéro de page (défaut: 0)
-   * @param {number} params.size - La taille de la page (défaut: 10)
-   * @returns {Promise<PageRole>} La page de résultats des rôles
-   */
+
   async getRoles(params = {}) {
     try {
       return await this.request('/roles', {
@@ -164,15 +136,11 @@ export const api = {
         }
       });
     } catch (error) {
-      throw showError(error, 'Erreur lors de la récupération des rôles');
+      console.error("Erreur getRoles:", error);
+      return { data: [] }; 
     }
   },
 
-  /**
-   * Créer un rôle dans le système
-   * @param {RoleDto} roleData - Les données du rôle à créer
-   * @returns {Promise<Role>} Le rôle créé
-   */
   async addRole(roleData) {
     try {
       return await this.request('/roles', {
@@ -180,16 +148,12 @@ export const api = {
         data: roleData,
       });
     } catch (error) {
-      throw showError(error, 'Erreur lors de la création du rôle');
+      console.error("Erreur addRole:", error);
+      return { data: [] }; 
     }
   },
 
-  /**
-   * Modifier un rôle dans le système
-   * @param {number} id - L'ID du rôle à modifier
-   * @param {RoleDto} roleData - Les nouvelles données du rôle
-   * @returns {Promise<Role>} Le rôle modifié
-   */
+
   async updateRole(id, roleData) {
     try {
       return await this.request(`/roles/${id}`, {
@@ -197,15 +161,12 @@ export const api = {
         data: roleData,
       });
     } catch (error) {
-      throw showError(error, 'Erreur lors de la mise à jour du rôle');
+      console.error("Erreur updateRole:", error);
+      return { data: [] }; 
     }
   },
 
-  /**
-   * Attribuer des profiles Orion à un rôle dans le système
-   * @param {OrionProfileAttributionDto} attributionData - Les données d'attribution
-   * @returns {Promise} La réponse de l'opération
-   */
+  
   async assignProfilesToRole(attributionData) {
     try {
       return await this.request('/roles/assign-profiles', {
@@ -213,15 +174,12 @@ export const api = {
         data: attributionData,
       });
     } catch (error) {
-      throw showError(error, 'Erreur lors de l\'attribution des profils');
+      console.error("Erreur assignProfilesToRole:", error);
+      return { data: [] }; 
     }
   },
 
-  /**
-   * Retirer des profiles Orion à un rôle dans le système
-   * @param {OrionProfileAttributionDto} attributionData - Les données de retrait
-   * @returns {Promise} La réponse de l'opération
-   */
+  
   async removeProfilesFromRole(attributionData) {
     try {
       return await this.request('/roles/remove-profiles', {
@@ -229,13 +187,16 @@ export const api = {
         data: attributionData,
       });
     } catch (error) {
-      throw showError(error, 'Erreur lors de la suppression des profils');
+      console.error("Erreur removeProfilesFromRole:", error);
+      return { data: [] }; 
     }
   },
 
   // ==================== USERS MANAGEMENT ====================
 
   async getUsers(params = {}) {
+    return { data: data.users }; 
+
     try {
       return await this.request('/users', {
         method: 'GET',
@@ -248,7 +209,8 @@ export const api = {
         }
       });
     } catch (error) {
-      throw showError(error, 'Erreur lors de la récupération des utilisateurs');
+      console.error("Erreur getUsers:", error);
+      return data.users; 
     }
   },
 
@@ -283,13 +245,14 @@ export const api = {
   
   
   async searchIntegrationRequests(searchData) {
+    console.log("searchData", searchData);
     try {
       return await this.request('/requests', {
         method: 'POST',
         data: searchData,
       });
     } catch (error) {
-      return data?.list_demande;
+      return {data:data?.list_demande};
       // throw showError(error, 'Erreur lors de la recherche des demandes');
     }
   },
