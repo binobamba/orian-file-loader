@@ -369,6 +369,20 @@
       "empty": false
     },
 
+    "analyse":  {
+      "totalOperation": 40,
+      "fileSize": 25,
+      "totalDebit": 80000000,
+      "totaCredit":288888,
+      "isBalanced": true
+    },
+
+    "processFile":{
+        "code": "200",
+        "message": "Demande soumise avec succès",
+        "data": "string"
+    },
+
     "users":{
       "totalPages": 2,
       "totalElements": 15,

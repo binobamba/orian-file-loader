@@ -4,6 +4,8 @@ import { Toast } from './notification';
 import data from './ExempleData.json' assert { type: 'json' };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9006';
+const VITE_MODE = import.meta.env.VITE_MODE ||'DEV'
+
 
 
 const getAuthToken = () => localStorage.getItem('token');
@@ -195,8 +197,9 @@ export const api = {
   // ==================== USERS MANAGEMENT ====================
 
   async getUsers(params = {}) {
-    return { data: data.users }; 
-
+    if(VITE_MODE === 'DEV'){
+       return { data: data.users }; 
+    }
     try {
       return await this.request('/users', {
         method: 'GET',
@@ -271,36 +274,74 @@ export const api = {
   
 
   async cancelIntegrationRequest(id) {
-    try {
-      return await this.request(`/requests/cancel/${id}`, {
-        method: 'PUT',
+  Swal.fire({
+    title: "Êtes-vous sûr de vouloir annuler cette demande ?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Confirmer l'annulation",
+    confirmButtonColor: "red",
+    cancelButtonText: "Annuler",
+    showLoaderOnConfirm: true,
+    preConfirm: async () => {
+      try {
+        const response = await this.request(`/requests/cancel/${id}`, {
+          method: 'PUT',
+        });
+
+        // Vérifie si le code de retour est 200
+        if (response.status === 200) {
+          return true;
+        } else {
+          throw new Error("La demande n'a pas pu être annulée.");
+        }
+      } catch (error) {
+        Swal.fire({
+          title: "Erreur de suppression",
+          text: error.message || "Une erreur est survenue lors de l'annulation.",
+          icon: "error"
+        });
+        return false;
+      }
+    },
+    allowOutsideClick: () => !Swal.isLoading()
+  }).then((result) => {
+    if (result.isConfirmed && result.value === true) {
+      Swal.fire({
+        title: "Demande annulée",
+        text: "La demande a été annulée avec succès.",
+        icon: "success"
       });
-    } catch (error) {
-      throw showError(error, 'Erreur lors de l\'annulation de la demande');
     }
-  },
+  });
+},
+
 
   // ==================== FILE OPERATIONS ====================
 
   
   async processFile(file, fileType) {
-    try {
       const formData = new FormData();
       formData.append('file', file);
+
+       if(VITE_MODE === 'DEV'){
+      return {data:data.processFile}
+      }
 
       return await axiosInstance.post(`/file/process-file?fileType=${fileType}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-    } catch (error) {
-      throw showError(error, 'Erreur lors du traitement du fichier');
-    }
+    
   },
 
   
   async analyzeOperationFile(file, fileType) {
-    try {
+     if(VITE_MODE === 'DEV'){
+          return {data:data.analyse}
+      }
+
+    
       const formData = new FormData();
       formData.append('file', file);
 
@@ -309,13 +350,6 @@ export const api = {
           'Content-Type': 'multipart/form-data',
         },
       });
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: ' Analyse du fichier',
-        text: error.response?.data?.message || 'Erreur lors de l\'analyse du fichier',
-        confirmButtonText: 'OK'
-      });
-    }
+    
   }
 };

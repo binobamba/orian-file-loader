@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaEdit, FaPlus, FaSearch, FaTimes, FaSync } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaSearch, FaTimes, FaSync, FaRegTrashAlt} from 'react-icons/fa';
 import { api } from '../services/api';
+import Swal from 'sweetalert2';
 import {
   BeautifulTable,
   usePagination
@@ -9,6 +10,8 @@ import {
 import { Button } from '../components/my-ui/Button';
 import { Card } from '../components/my-ui/Card';
 import ModalDemande from './partial-demande/ModalDemande';
+import showDemandeForm from '../components/my-ui/showDemandeForm';
+import { message } from 'antd';
 
 export default function Demande() {
   const [data, setData] = useState({
@@ -151,12 +154,22 @@ export default function Demande() {
 
   // Gestion des modales
   const showModal = (mode, demandeId = null) => {
-    setModalConfig({
-      visible: true,
-      mode,
-      demandeId
-    });
+
+
+
+    // setModalConfig({
+    //   visible: true,
+    //   mode,
+    //   demandeId
+    // });
   };
+
+
+
+const DeleteDemande = (demande) => {
+ api.cancelIntegrationRequest(demande?.id)
+};
+
 
   const hideModal = () => {
     setModalConfig({
@@ -188,8 +201,8 @@ export default function Demande() {
       <Card
         title="GESTION DES DEMANDES"
         addBouton={true}
-        addBoutonText="Nouvelle demande"
-        onClickAddButton={() => showModal('create')}
+        buttonText="Nouvelle demande"
+        onClickAddButton={showDemandeForm}
         icon={<FaPlus className="inline mr-1" />}
       >
         {/* Barre de recherche avancée */}
@@ -327,7 +340,7 @@ export default function Demande() {
                 { label: "Intégration", align: "center", className: "whitespace-nowrap" },
                 { label: "Opération", align: "center", className: "whitespace-nowrap" },
                 { label: "Créé par", align: "left", className: "whitespace-nowrap" },
-                { label: "Date de création", align: "center", className: "whitespace-nowrap inline-block" },
+                { label: "création", align: "center", className: "whitespace-nowrap inline-block" },
                 { label: "Actions", align: "center", className: "whitespace-nowrap" }
               ]}
               data={data.content}
@@ -404,6 +417,16 @@ export default function Demande() {
                         title="Modifier"
                       >
                         <FaEdit className="inline h-4 w-4" />
+                      </Button>
+
+                      <Button 
+                        onClick={() => DeleteDemande(record)}
+                        size="lg"
+                        variant="outline"
+                        className="text-xs px-2 py-1"
+                        title="supprimer"
+                      >
+                        <FaRegTrashAlt className="inline h-4 w-4" />
                       </Button>
                     </div>
                   </td>

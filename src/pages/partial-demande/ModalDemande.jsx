@@ -15,8 +15,10 @@ import {
 import {
   UploadOutlined,
   FileOutlined,
-  InboxOutlined
+    InboxOutlined,
+
 } from '@ant-design/icons';
+
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -108,7 +110,7 @@ const ModalDemande = ({ visible, onCancel, onSuccess, mode, demandeId }) => {
       open={visible}
       onCancel={handleCancel}
       footer={null}
-      width={600}
+      width={800}
       centered
     >
       <Form
@@ -123,31 +125,21 @@ const ModalDemande = ({ visible, onCancel, onSuccess, mode, demandeId }) => {
         <Alert
           message="Information"
           description="Veuillez uploader un fichier Excel ou CSV contenant les données de votre demande."
-          type="info"
+          type="success"
           showIcon
+          
           style={{ marginBottom: 16 }}
         />
 
         <Form.Item
-          name="type"
-          label="Type de demande"
+          name="fileType"
+          label="TYPE DE FICHIER"
           rules={[{ required: true, message: 'Veuillez sélectionner un type' }]}
         >
           <Select placeholder="Sélectionnez le type de demande">
-            <Select.Option value="OPERATION">Opération</Select.Option>
-            <Select.Option value="INTEGRATION">Intégration</Select.Option>
-            <Select.Option value="VALIDATION">Validation</Select.Option>
+            <Select.Option value="FICHIER_TRAITEMENT_SALAIRE">FICHIER DE TRAITEMENT DE SALAIRE</Select.Option>
+            <Select.Option value="FICHIER_TRAITEMENT_OPERATION">FICHIER DE TRAITEMENT D'OPERATION</Select.Option>
           </Select>
-        </Form.Item>
-
-        <Form.Item
-          name="description"
-          label="Description"
-        >
-          <TextArea
-            placeholder="Description de la demande (optionnel)"
-            rows={3}
-          />
         </Form.Item>
 
         <Form.Item
@@ -161,7 +153,9 @@ const ModalDemande = ({ visible, onCancel, onSuccess, mode, demandeId }) => {
             maxCount={1}
           >
             <p className="ant-upload-drag-icon">
-              <InboxOutlined />
+              <InboxOutlined 
+               color='red'
+              />
             </p>
             <p className="ant-upload-text">
               Cliquez ou glissez-déposez un fichier ici
@@ -184,17 +178,19 @@ const ModalDemande = ({ visible, onCancel, onSuccess, mode, demandeId }) => {
 
         <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
           <Space>
-            <Button onClick={handleCancel}>
+            <Button onClick={handleCancel}
+             style={{backgroundColor:'red', color:"white"}}
+            >
               Annuler
             </Button>
             <Button 
-              type="primary" 
+              style={{backgroundColor:'green'}} 
               htmlType="submit" 
               loading={uploading}
               icon={<UploadOutlined />}
               disabled={fileList.length === 0}
             >
-              {uploading ? 'Traitement...' : 'Créer la demande'}
+              {uploading ? 'Traitement...' : 'Analyser le fichier'}
             </Button>
           </Space>
         </Form.Item>

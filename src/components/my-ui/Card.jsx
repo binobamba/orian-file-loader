@@ -21,7 +21,7 @@ export const Card = ({
             {addBouton && (
               <button
                 type="button"
-                className="bg-white text-green-900 hover:bg-green-600 hover:text-white focus:ring-4 focus:ring-green-300 rounded-lg text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 text-center transition-colors duration-200 flex items-center gap-1"
+                className="bg-green-900 text-white hover:bg-green-600 hover:text-white focus:ring-4 focus:ring-green-300 rounded-lg text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 text-center transition-colors duration-200 flex items-center gap-1"
                 onClick={onClickAddButton}
               >
                 <PlusOutlined className="text-xs sm:text-sm" /> 
