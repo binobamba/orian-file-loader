@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaEdit, FaTrash, FaPlus, FaTimes, FaSave, FaSearch } from 'react-icons/fa';
-import { api } from './../services/api';
+import { FaEdit, FaPlus, FaTimes, FaSearch } from 'react-icons/fa';
+import { api } from '../services/api';
+import Swal from 'sweetalert2';
 import {
   BeautifulTable,
   usePagination
 } from '../components/my-ui/Table';
 import { Button } from '../components/my-ui/Button';
 import { Card } from '../components/my-ui/Card';
-import { Row, Col } from 'antd';
+import showModalRoleToUser from '../components/my-ui/showModalRoleToUser';
 
 export default function UserRole() {
   const [usersData, setUsersData] = useState({
@@ -18,42 +19,39 @@ export default function UserRole() {
     number: 0,
     size: 10
   });
-  const [roles, setRoles] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [allRoles, setAllRoles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingRoles, setLoadingRoles] = useState(false);
   const navigate = useNavigate();
 
-  // États pour les champs de recherche
   const [searchFirstName, setSearchFirstName] = useState('');
   const [searchLastName, setSearchLastName] = useState('');
   const [searchMatricule, setSearchMatricule] = useState('');
 
   const pagination = usePagination(1, 10);
 
-  const handleUserSelect = (user) => {
-    setSelectedUser(user);
-    setSelectedRoles(user.roles.map((role) => role.role_id || role.id));
-  };
-
-  const handleRoleChange = (event) => {
-    const { name, checked } = event.target;
-    const roleId = parseInt(name);
-    const updatedRoles = checked
-      ? [...selectedRoles, roleId]
-      : selectedRoles.filter((id) => id !== roleId);
-    setSelectedRoles(updatedRoles);
-  };
-
-  const handleSave = async () => {
-    const data = {
-      userId: selectedUser.id,
-      roles: selectedRoles,
-    };
-    await api.attributeRolesToUser(data);
-    await fetchData();
-    setSelectedUser(null);
-    setSelectedRoles([]);
+  const handleEditUserRoles = (user) => {
+    console.log("Rôles disponibles:", allRoles);
+    if (allRoles.length === 0) {
+      fetchAllRoles();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: 'Chargement des rôles en cours...',
+        showConfirmButton: false,
+        timer: 2000
+      });
+      return;
+    }
+    
+    showModalRoleToUser(user, allRoles, () => {
+      fetchData(pagination.currentPage, pagination.pageSize, {
+        firstName: searchFirstName,
+        lastName: searchLastName,
+        matricule: searchMatricule
+      });
+    });
   };
 
   const fetchData = async (page = 1, size = 10, filters = {}) => {
@@ -67,17 +65,41 @@ export default function UserRole() {
         size: size
       });
       
-      const rolesResponse = await api.getRoles();
-      
-      console.log("usersResponse", usersResponse);
-      console.log("rolesResponse", rolesResponse);
-      
       setUsersData(usersResponse.data);
-      setRoles(rolesResponse.data.content || rolesResponse.data);
     } catch (error) {
-      console.error("Erreur lors du chargement des données:", error);
+      console.error("Erreur lors du chargement des utilisateurs:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllRoles = async () => {
+    setLoadingRoles(true);
+    try {
+      let allRolesData = [];
+      let currentPage = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const rolesResponse = await api.getRoles({
+          page: currentPage,
+          size: 100
+        });
+
+        if (rolesResponse.content && rolesResponse.content.length > 0) {
+          allRolesData = [...allRolesData, ...rolesResponse.content];
+          currentPage++;
+          hasMore = currentPage < rolesResponse.totalPages;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      setAllRoles(allRolesData);
+    } catch (error) {
+      console.error("Erreur lors du chargement des rôles:", error);
+    } finally {
+      setLoadingRoles(false);
     }
   };
 
@@ -116,114 +138,111 @@ export default function UserRole() {
       lastName: searchLastName,
       matricule: searchMatricule
     });
+    
+    fetchAllRoles();
   }, [pagination.currentPage, pagination.pageSize]);
 
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
-      try {
-        await api.deleteUser(userId);
-        await fetchData(pagination.currentPage, pagination.pageSize, {
-          firstName: searchFirstName,
-          lastName: searchLastName,
-          matricule: searchMatricule
-        });
-      } catch (error) {
-        console.error("Erreur lors de la suppression:", error);
-      }
-    }
+  const displayRoles = (userRoles) => {
+    if (!userRoles || userRoles.length === 0) return "Aucun rôle";
+    
+    const displayedRoles = userRoles.slice(0, 2);
+    const remainingCount = userRoles.length - 2;
+    
+    return (
+      <div className="flex flex-wrap gap-1">
+        {displayedRoles.map((role, index) => (
+          <span
+            key={role.role_id || role.id || index}
+            className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full dark:bg-blue-900 dark:text-blue-200"
+          >
+            {role.name}
+          </span>
+        ))}
+        {remainingCount > 0 && (
+          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full dark:bg-gray-700 dark:text-gray-300">
+            +{remainingCount}...
+          </span>
+        )}
+      </div>
+    );
   };
 
   return (
     <>
       <Card
         title="GESTION DES UTILISATEURS"
-        // addBouton={true}
         buttonText="Ajouter un utilisateur"
         onButtonClick={() => navigate('/ajouter-utilisateur')} 
         icon={<FaPlus className="inline mr-1" />}
       >
-        {/* Barre de recherche avancée */}
-        <div className=" bg-gray-100 dark:bg-gray-800  pt-4 pb-2 px-4 ">
-                <form onSubmit={handleSearch} className="space-y-3 md:space-y-0">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                    {/* Champ prénom */}
-                    <div>
-                        <label
-                        htmlFor="firstName"
-                        className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1"
-                        >
-                        Prénom
-                        </label>
-                        <input
-                        type="text"
-                        id="firstName"
-                        placeholder="Prénom"
-                        value={searchFirstName}
-                        onChange={(e) => setSearchFirstName(e.target.value)}
-                        className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
-                    </div>
+        <div className="bg-gray-100 dark:bg-gray-800 pt-4 pb-2 px-4">
+          <form onSubmit={handleSearch} className="space-y-3 md:space-y-0">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+              <div>
+                <label htmlFor="firstName" className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Prénom
+                </label>
+                <input
+                  type="text"
+                  id="firstName"
+                  placeholder="Prénom"
+                  value={searchFirstName}
+                  onChange={(e) => setSearchFirstName(e.target.value)}
+                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
 
-                    {/* Champ nom */}
-                    <div>
-                        <label
-                        htmlFor="lastName"
-                        className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1"
-                        >
-                        Nom
-                        </label>
-                        <input
-                        type="text"
-                        id="lastName"
-                        placeholder="Nom"
-                        value={searchLastName}
-                        onChange={(e) => setSearchLastName(e.target.value)}
-                        className="block w-full px-2 py-1 text-md border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
-                    </div>
+              <div>
+                <label htmlFor="lastName" className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nom
+                </label>
+                <input
+                  type="text"
+                  id="lastName"
+                  placeholder="Nom"
+                  value={searchLastName}
+                  onChange={(e) => setSearchLastName(e.target.value)}
+                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
 
-                    {/* Champ matricule */}
-                    <div>
-                        <label
-                        htmlFor="matricule"
-                        className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1"
-                        >
-                        Matricule
-                        </label>
-                        <input
-                        type="text"
-                        id="matricule"
-                        placeholder="Matricule"
-                        value={searchMatricule}
-                        onChange={(e) => setSearchMatricule(e.target.value)}
-                        className="block w-full px-2 py-1 text-md border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
-                    </div>
+              <div>
+                <label htmlFor="matricule" className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Matricule
+                </label>
+                <input
+                  type="text"
+                  id="matricule"
+                  placeholder="Matricule"
+                  value={searchMatricule}
+                  onChange={(e) => setSearchMatricule(e.target.value)}
+                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
 
-                    {/* Boutons */}
-                    <div className="flex gap-2">
-                        <button
-                        type="submit"
-                        className="px-3 py-1 text-md rounded-md bg-orange-600 text-white hover:bg-orange-700 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                        >
-                        <FaSearch className="inline mr-1" />
-                        Rechercher
-                        </button>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="px-3 py-1 text-sm rounded-md bg-orange-600 text-white hover:bg-orange-700 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <FaSearch className="inline mr-1" />
+                  Rechercher
+                </button>
 
-                        {hasActiveFilters && (
-                        <button
-                            type="button"
-                            onClick={handleClearSearch}
-                            className="px-3 py-1 text-md rounded-md bg-gray-500 text-white hover:bg-gray-600"
-                        >
-                            Effacer
-                        </button>
-                        )}
-                    </div>
-                    </div>
-        </form>
-       </div>
-
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="px-3 py-1 text-sm rounded-md bg-gray-500 text-white hover:bg-gray-600"
+                  >
+                    <FaTimes className="inline mr-1" />
+                    Effacer
+                  </button>
+                )}
+              </div>
+            </div>
+          </form>
+        </div>
 
         {loading ? (
           <div className="text-center py-8">
@@ -267,25 +286,17 @@ export default function UserRole() {
                   {user.orionSheet?.service || "N/A"}
                 </td>
                 <td className="p-2 sm:p-3 text-left text-xs sm:text-sm">
-                  <div className="flex flex-wrap gap-1">
-                    {user.roles?.map((role, index) => (
-                      <span
-                        key={role.role_id || role.id || index}
-                        className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full dark:bg-blue-900 dark:text-blue-200"
-                      >
-                        {role.name}
-                      </span>
-                    )) || "Aucun rôle"}
-                  </div>
+                  {displayRoles(user.roles)}
                 </td>
                 <td className="p-2 sm:p-3 text-center text-xs sm:text-sm">
                   <div className="flex space-x-1 justify-center text-center">
                     <Button 
-                      onClick={() => handleUserSelect(user)}
+                      onClick={() => handleEditUserRoles(user)}
                       size="sm"
                       variant="outline"
                       className="text-xs px-2 py-1"
                       title="Modifier les rôles"
+                      disabled={loadingRoles}
                     >
                       <FaEdit className="inline h-4 w-4" />
                     </Button>
