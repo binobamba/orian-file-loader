@@ -127,21 +127,33 @@ export const api = {
   // ==================== ROLES MANAGEMENT ====================
 
 
-  async getRoles(params = {}) {
-    try {
-      return await this.request('/roles', {
-        method: 'GET',
-        params: {
-          name: params.name || '',
-          page: params.page || 0,
-          size: params.size || 10,
-        }
-      });
-    } catch (error) {
-      console.error("Erreur getRoles:", error);
-      return { data: [] }; 
-    }
-  },
+async getRoles(params = {}) {
+  if(VITE_MODE === 'DEV'){
+       return { data: data.getRols }; 
+  }
+
+  try {
+    const response = await this.request('/roles', {
+      method: 'GET',
+      params: {
+        name: params.name || '',
+        page: params.page || 0,
+        size: params.size || 10,
+      }
+    });    
+    return response.data;
+  } catch (error) {
+    console.error("Erreur getRoles:", error);
+    return {
+      totalPages: 0,
+      totalElements: 0,
+      size: params.size || 10,
+      content: [],
+      number: params.page || 0,
+      empty: true
+    };
+  }
+},
 
   async addRole(roleData) {
     try {

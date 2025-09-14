@@ -11,6 +11,7 @@ import { Button } from '../components/my-ui/Button';
 import { Card } from '../components/my-ui/Card';
 import ModalDemande from './partial-demande/ModalDemande';
 import showDemandeForm from '../components/my-ui/showDemandeForm';
+import { showValidationModal } from '../components/my-ui/showValidationModal';
 import { message } from 'antd';
 
 export default function Demande() {
@@ -39,6 +40,14 @@ export default function Demande() {
     mode: 'create',
     demandeId: null
   });
+
+
+const showModalValidation = (demandeData) => {
+  showValidationModal(demandeData, (demandeId) => {
+    console.log(`Demande ${demandeId} validée avec succès`);
+    fetchDemandeData(pagination.currentPage, pagination.pageSize);
+  });
+};
 
   // Configuration des statuts
   const getStatusConfig = (status) => {
@@ -152,18 +161,6 @@ export default function Demande() {
     });
   };
 
-  // Gestion des modales
-  const showModal = (mode, demandeId = null) => {
-
-
-
-    // setModalConfig({
-    //   visible: true,
-    //   mode,
-    //   demandeId
-    // });
-  };
-
 
 
 const DeleteDemande = (demande) => {
@@ -178,6 +175,7 @@ const DeleteDemande = (demande) => {
       demandeId: null
     });
   };
+
 
   const handleModalSuccess = () => {
     hideModal();
@@ -254,17 +252,18 @@ const DeleteDemande = (demande) => {
                   htmlFor="createdById"
                   className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
-                  ID Créateur
+                  DEMANDEUR
                 </label>
                 <input
                   type="text"
                   id="createdById"
-                  placeholder="ID du créateur"
+                  placeholder="ID du demandeur"
                   value={searchCreatedById}
                   onChange={(e) => setSearchCreatedById(e.target.value)}
                   className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
+              
 
               {/* Champ date de début */}
               <div>
@@ -325,125 +324,134 @@ const DeleteDemande = (demande) => {
           </form>
         </div>
 
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">Chargement...</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <BeautifulTable
-              headers={[
-                { label: "Référence", align: "left", className: "whitespace-nowrap" },
-                { label: "Débit", align: "right", className: "whitespace-nowrap" },
-                { label: "Crédit", align: "right", className: "whitespace-nowrap" },
-                { label: "Intégration", align: "center", className: "whitespace-nowrap" },
-                { label: "Opération", align: "center", className: "whitespace-nowrap" },
-                { label: "Créé par", align: "left", className: "whitespace-nowrap" },
-                { label: "création", align: "center", className: "whitespace-nowrap inline-block" },
-                { label: "Actions", align: "center", className: "whitespace-nowrap" }
-              ]}
-              data={data.content}
-              emptyMessage={hasActiveFilters ? "Aucune demande trouvée avec ces critères" : "Aucune demande disponible"}
-              pagination={{
-                currentPage: data.number + 1,
-                totalPages: data.totalPages,
-                totalElements: data.totalElements,
-                pageSize: data.size,
-                onPageChange: handlePageChange
-              }}
-              renderRow={(record) => (
-                <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="p-2 sm:p-3 text-left text-xs sm:text-sm whitespace-nowrap">
-                    {record.reference}
-                  </td>
-                  <td className="p-2 sm:p-3 text-right text-xs sm:text-sm whitespace-nowrap">
-                    {formatAmount(record.debitAmount)}
-                  </td>
-                  <td className="p-2 sm:p-3 text-right text-xs sm:text-sm whitespace-nowrap">
-                    {formatAmount(record.creditAmount)}
-                  </td>
-                  <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        getStatusConfig(record.integrationStatus).color === 'green' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : getStatusConfig(record.integrationStatus).color === 'red'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                          : getStatusConfig(record.integrationStatus).color === 'blue'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                      }`}
-                    >
-                      {getStatusConfig(record.integrationStatus).label}
-                    </span>
-                  </td>
-                  <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        getStatusConfig(record.operationStatus).color === 'green' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : getStatusConfig(record.operationStatus).color === 'red'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                          : getStatusConfig(record.operationStatus).color === 'blue'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                      }`}
-                    >
-                      {getStatusConfig(record.operationStatus).label}
-                    </span>
-                  </td>
-                  <td className="p-2 sm:p-3 text-left text-xs sm:text-sm whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {record.createdBy ? (
-                          <>
-                            {record.createdBy.firstName} {record.createdBy.lastName} - ({record.createdBy.matricule})
-                          </>
-                        ) : 'N/A'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                    {record.createdAt ? formatDate(record.createdAt) : '-'}
-                  </td>
-                  <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                    <div className="flex space-x-1 justify-center">
-                      <Button 
-                        onClick={() => showModal('edit', record.id)}
-                        size="lg"
-                        variant="outline"
-                        className="text-xs px-2 py-1"
-                        title="Modifier"
-                      >
-                        <FaEdit className="inline h-4 w-4" />
-                      </Button>
+       {loading ? (
+  <div className="text-center py-8">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+    <p className="mt-2 text-gray-600 dark:text-gray-400">Chargement...</p>
+  </div>
+) : (
+  <div className="overflow-x-auto relative">
+    <div className="min-w-full" style={{ minWidth: '1000px' }}>
+      <BeautifulTable
+        headers={[
+          { label: "RÉFÉRENCE", align: "center", className: "text-center whitespace-nowrap bg-gray-100" },
+          { label: "DÉBIT", align: "center", className: "text-center whitespace-nowrap" },
+          { label: "CRÉDIT", align: "center", className: "text-center whitespace-nowrap" },
+          { label: "INTÉGRATION", align: "center", className: "text-center whitespace-nowrap" },
+          { label: "OPÉRATION", align: "center", className: "text-center whitespace-nowrap" },
+          { label: "DEMANDEUR", align: "center", className: "text-center whitespace-nowrap" },
+          { label: "VALIDÉ PAR", align: "center", className: "text-center whitespace-nowrap" },
+          { label: "DATE DEMANDE", align: "center", className: "text-center whitespace-nowrap" },
+          { label: "ACTIONS", align: "center", className: "text-center whitespace-nowrap bg-gray-100 sticky right-0 z-10" }
+        ]}
+        data={data.content}
+        emptyMessage={hasActiveFilters ? "Aucune demande trouvée avec ces critères" : "Aucune demande disponible"}
+        pagination={{
+          currentPage: data.number + 1,
+          totalPages: data.totalPages,
+          totalElements: data.totalElements,
+          pageSize: data.size,
+          onPageChange: handlePageChange
+        }}
+        renderRow={(record) => (
+          <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+            <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+              {record.reference}
+            </td>
+            <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+              {formatAmount(record.debitAmount)}
+            </td>
+            <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+              {formatAmount(record.creditAmount)}
+            </td>
+            <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+              <span
+                className={`px-2 py-1 text-xs rounded-full ${
+                  getStatusConfig(record.integrationStatus).color === 'green' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : getStatusConfig(record.integrationStatus).color === 'red'
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    : getStatusConfig(record.integrationStatus).color === 'blue'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                }`}
+              >
+                {getStatusConfig(record.integrationStatus).label}
+              </span>
+            </td>
+            <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+              <span
+                className={`px-2 py-1 text-xs rounded-full ${
+                  getStatusConfig(record.operationStatus).color === 'green' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : getStatusConfig(record.operationStatus).color === 'red'
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    : getStatusConfig(record.operationStatus).color === 'blue'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                }`}
+              >
+                {getStatusConfig(record.operationStatus).label}
+              </span>
+            </td>
+            <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+              <div className="flex flex-col items-center">
+                <span className="font-medium whitespace-nowrap">
+                  {record.createdBy ? (
+                    <>
+                      {record.createdBy.firstName} {record.createdBy.lastName} ({record.createdBy.matricule})
+                    </>
+                  ) : 'N/A'}
+                </span>
+              </div>
+            </td>
+            <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+              <div className="flex flex-col items-center">
+                <span className="font-medium whitespace-nowrap">
+                  {record.validatedBy ? (
+                    <>
+                      {record.validatedBy.firstName} {record.validatedBy.lastName} ({record.validatedBy.matricule})
+                    </>
+                  ) : 'N/A'}
+                </span>
+              </div>
+            </td>
+            <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
+              {record.createdAt ? formatDate(record.createdAt) : '-'}
+            </td>
+            <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap bg-white sticky right-0 z-10">
+              <div className="flex space-x-1 justify-center">
+                <Button 
+                  onClick={() => showModalValidation(record, record.id)}
+                  size="lg"
+                  variant="outline"
+                  className="text-xs px-2 py-1 whitespace-nowrap"
+                  title="Modifier"
+                >
+                  <FaEdit className="inline h-4 w-4" /> VALIDER
+                </Button>
 
-                      <Button 
-                        onClick={() => DeleteDemande(record)}
-                        size="lg"
-                        variant="outline"
-                        className="text-xs px-2 py-1"
-                        title="supprimer"
-                      >
-                        <FaRegTrashAlt className="inline h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            />
-          </div>
+                <Button 
+                  onClick={() => DeleteDemande(record)}
+                  size="lg"
+                  variant="outline"
+                  className="text-xs px-2 py-1"
+                  title="supprimer"
+                >
+                  <FaRegTrashAlt className="inline h-4 w-4" />
+                </Button>
+              </div>
+            </td>
+          </tr>
         )}
+      />
+    </div>
+  </div>
+)}
+
+
       </Card>
 
-      <ModalDemande
-        visible={modalConfig.visible}
-        mode={modalConfig.mode}
-        demandeId={modalConfig.demandeId}
-        onCancel={hideModal}
-        onSuccess={handleModalSuccess}
-      />
     </>
   );
 }

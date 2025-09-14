@@ -374,7 +374,7 @@
       "fileSize": 25,
       "totalDebit": 80000000,
       "totaCredit":288888,
-      "isBalanced": true
+      "isBalanced": false
     },
 
     "processFile":{
@@ -507,7 +507,278 @@
         "paged": true
       },
       "empty": false
-    }
+    },
+
+  "getRols":{
+          "totalPages": 1,
+          "totalElements": 30,
+          "size": 30,
+          "content": [
+            {
+              "role_id": 1,
+              "name": "ADMIN",
+              "editable": false,
+              "profiles": [
+                { "id": 1, "code": "P_ADMIN", "libelle": "Profil Administrateur" }
+              ]
+            },
+            {
+              "role_id": 2,
+              "name": "USER",
+              "editable": true,
+              "profiles": [
+                { "id": 2, "code": "P_USER", "libelle": "Profil Utilisateur" }
+              ]
+            },
+            {
+              "role_id": 3,
+              "name": "MANAGER",
+              "editable": true,
+              "profiles": [
+                { "id": 3, "code": "P_MANAGER", "libelle": "Profil Manager" }
+              ]
+            },
+            {
+              "role_id": 4,
+              "name": "SUPERVISOR",
+              "editable": true,
+              "profiles": [
+                { "id": 4, "code": "P_SUPERVISOR", "libelle": "Profil Superviseur" }
+              ]
+            },
+            {
+              "role_id": 5,
+              "name": "AUDITOR",
+              "editable": true,
+              "profiles": [
+                { "id": 5, "code": "P_AUDITOR", "libelle": "Profil Auditeur" }
+              ]
+            },
+            {
+              "role_id": 6,
+              "name": "DEV",
+              "editable": true,
+              "profiles": [
+                { "id": 6, "code": "P_DEV", "libelle": "Profil Développeur" }
+              ]
+            },
+            {
+              "role_id": 7,
+              "name": "TESTER",
+              "editable": true,
+              "profiles": [
+                { "id": 7, "code": "P_TESTER", "libelle": "Profil Testeur" }
+              ]
+            },
+            {
+              "role_id": 8,
+              "name": "HR",
+              "editable": true,
+              "profiles": [
+                { "id": 8, "code": "P_HR", "libelle": "Profil Ressources Humaines" }
+              ]
+            },
+            {
+              "role_id": 9,
+              "name": "FINANCE",
+              "editable": true,
+              "profiles": [
+                { "id": 9, "code": "P_FIN", "libelle": "Profil Finance" }
+              ]
+            },
+            {
+              "role_id": 10,
+              "name": "SALES",
+              "editable": true,
+              "profiles": [
+                { "id": 10, "code": "P_SALES", "libelle": "Profil Commercial" }
+              ]
+            },
+            {
+              "role_id": 11,
+              "name": "SUPPORT",
+              "editable": true,
+              "profiles": [
+                { "id": 11, "code": "P_SUPPORT", "libelle": "Profil Support" }
+              ]
+            },
+            {
+              "role_id": 12,
+              "name": "CUSTOMER",
+              "editable": true,
+              "profiles": [
+                { "id": 12, "code": "P_CUSTOMER", "libelle": "Profil Client" }
+              ]
+            },
+            {
+              "role_id": 13,
+              "name": "PARTNER",
+              "editable": true,
+              "profiles": [
+                { "id": 13, "code": "P_PARTNER", "libelle": "Profil Partenaire" }
+              ]
+            },
+            {
+              "role_id": 14,
+              "name": "SUPPLIER",
+              "editable": true,
+              "profiles": [
+                { "id": 14, "code": "P_SUPPLIER", "libelle": "Profil Fournisseur" }
+              ]
+            },
+            {
+              "role_id": 15,
+              "name": "GUEST",
+              "editable": true,
+              "profiles": [
+                { "id": 15, "code": "P_GUEST", "libelle": "Profil Invité" }
+              ]
+            },
+            {
+              "role_id": 16,
+              "name": "EDITOR",
+              "editable": true,
+              "profiles": [
+                { "id": 16, "code": "P_EDITOR", "libelle": "Profil Éditeur" }
+              ]
+            },
+            {
+              "role_id": 17,
+              "name": "AUTHOR",
+              "editable": true,
+              "profiles": [
+                { "id": 17, "code": "P_AUTHOR", "libelle": "Profil Auteur" }
+              ]
+            },
+            {
+              "role_id": 18,
+              "name": "REVIEWER",
+              "editable": true,
+              "profiles": [
+                { "id": 18, "code": "P_REVIEWER", "libelle": "Profil Relecteur" }
+              ]
+            },
+            {
+              "role_id": 19,
+              "name": "DESIGNER",
+              "editable": true,
+              "profiles": [
+                { "id": 19, "code": "P_DESIGNER", "libelle": "Profil Designer" }
+              ]
+            },
+            {
+              "role_id": 20,
+              "name": "ANALYST",
+              "editable": true,
+              "profiles": [
+                { "id": 20, "code": "P_ANALYST", "libelle": "Profil Analyste" }
+              ]
+            },
+            {
+              "role_id": 21,
+              "name": "TRAINER",
+              "editable": true,
+              "profiles": [
+                { "id": 21, "code": "P_TRAINER", "libelle": "Profil Formateur" }
+              ]
+            },
+            {
+              "role_id": 22,
+              "name": "STUDENT",
+              "editable": true,
+              "profiles": [
+                { "id": 22, "code": "P_STUDENT", "libelle": "Profil Étudiant" }
+              ]
+            },
+            {
+              "role_id": 23,
+              "name": "MENTOR",
+              "editable": true,
+              "profiles": [
+                { "id": 23, "code": "P_MENTOR", "libelle": "Profil Mentor" }
+              ]
+            },
+            {
+              "role_id": 24,
+              "name": "COACH",
+              "editable": true,
+              "profiles": [
+                { "id": 24, "code": "P_COACH", "libelle": "Profil Coach" }
+              ]
+            },
+            {
+              "role_id": 25,
+              "name": "DIRECTOR",
+              "editable": true,
+              "profiles": [
+                { "id": 25, "code": "P_DIRECTOR", "libelle": "Profil Directeur" }
+              ]
+            },
+            {
+              "role_id": 26,
+              "name": "VP",
+              "editable": true,
+              "profiles": [
+                { "id": 26, "code": "P_VP", "libelle": "Profil Vice-Président" }
+              ]
+            },
+            {
+              "role_id": 27,
+              "name": "CEO",
+              "editable": false,
+              "profiles": [
+                { "id": 27, "code": "P_CEO", "libelle": "Profil Président Directeur Général" }
+              ]
+            },
+            {
+              "role_id": 28,
+              "name": "CTO",
+              "editable": false,
+              "profiles": [
+                { "id": 28, "code": "P_CTO", "libelle": "Profil Directeur Technique" }
+              ]
+            },
+            {
+              "role_id": 29,
+              "name": "CFO",
+              "editable": false,
+              "profiles": [
+                { "id": 29, "code": "P_CFO", "libelle": "Profil Directeur Financier" }
+              ]
+            },
+            {
+              "role_id": 30,
+              "name": "CIO",
+              "editable": false,
+              "profiles": [
+                { "id": 30, "code": "P_CIO", "libelle": "Profil Directeur Systèmes d’Information" }
+              ]
+            }
+          ],
+          "number": 0,
+          "sort": {
+            "empty": false,
+            "unsorted": false,
+            "sorted": true
+          },
+          "first": true,
+          "last": true,
+          "numberOfElements": 30,
+          "pageable": {
+            "offset": 0,
+            "sort": {
+              "empty": false,
+              "unsorted": false,
+              "sorted": true
+            },
+            "unpaged": false,
+            "pageNumber": 0,
+            "pageSize": 30,
+            "paged": true
+          },
+          "empty": false
+        }
+
 
   }
 
