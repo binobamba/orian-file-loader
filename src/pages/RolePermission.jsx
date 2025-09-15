@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaEdit, FaPlus, FaTimes, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaTimes, FaTrash, FaUserPlus } from 'react-icons/fa';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
 import {
@@ -9,75 +8,34 @@ import {
 } from '../components/my-ui/Table';
 import { Button } from '../components/my-ui/Button';
 import { Card } from '../components/my-ui/Card';
-import showModalRoleToUser from '../components/my-ui/showModalRoleToUser';
+import showModalRoleProfiles from '../components/my-ui/showModalRoleProfiles';
 
- function RolePermission() {
-  const [usersData, setUsersData] = useState({
+function RolePermission() {
+  const [rolesData, setRolesData] = useState({
     content: [],
     totalPages: 0,
     totalElements: 0,
     number: 0,
     size: 10
   });
-  const [allRoles, setAllRoles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingRoles, setLoadingRoles] = useState(false);
-  const navigate = useNavigate();
-
-  const [searchFirstName, setSearchFirstName] = useState('');
-  const [searchLastName, setSearchLastName] = useState('');
-  const [searchMatricule, setSearchMatricule] = useState('');
-
+  const [searchName, setSearchName] = useState('');
   const pagination = usePagination(1, 10);
 
-  const handleEditUserRoles = (user) => {
-    if (allRoles.length === 0) {
-      fetchAllRoles().then(() => {
-        showModalRoleToUser(user, allRoles, () => {
-          fetchData(pagination.currentPage, pagination.pageSize, {
-            firstName: searchFirstName,
-            lastName: searchLastName,
-            matricule: searchMatricule
-          });
-        });
-      });
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'info',
-        title: 'Chargement des rôles en cours...',
-        showConfirmButton: false,
-        timer: 2000
-      });
-      return;
-    }
-    
-    showModalRoleToUser(user, allRoles, () => {
-      fetchData(pagination.currentPage, pagination.pageSize, {
-        firstName: searchFirstName,
-        lastName: searchLastName,
-        matricule: searchMatricule
-      });
-    });
-  };
-
-  const fetchData = async (page = 1, size = 10, filters = {}) => {
+  const fetchData = async (page = 1, size = 10, name = '') => {
     setLoading(true);
     try {
-      const usersResponse = await api.getUsers({
-        firstName: filters.firstName || '',
-        lastName: filters.lastName || '',
-        matricule: filters.matricule || '',
-        page: page - 1,
+      const response = await api.getRoles({
+        name: name,
+        page: page - 1, // L'API attend une page 0-based
         size: size
       });
       
-      // S'assurer que la réponse contient bien les données attendues
-      if (usersResponse && usersResponse.data) {
-        setUsersData(usersResponse.data);
+      if (response && response.data) {
+        setRolesData(response.data);
       } else {
-        console.error("Format de réponse inattendu:", usersResponse);
-        setUsersData({
+        console.error("Format de réponse inattendu:", response);
+        setRolesData({
           content: [],
           totalPages: 0,
           totalElements: 0,
@@ -86,8 +44,9 @@ import showModalRoleToUser from '../components/my-ui/showModalRoleToUser';
         });
       }
     } catch (error) {
-      console.error("Erreur lors du chargement des utilisateurs:", error);
-      setUsersData({
+      console.error("Erreur lors du chargement des rôles:", error);
+      Swal.fire('Erreur', 'Impossible de charger les rôles', 'error');
+      setRolesData({
         content: [],
         totalPages: 0,
         totalElements: 0,
@@ -99,156 +58,102 @@ import showModalRoleToUser from '../components/my-ui/showModalRoleToUser';
     }
   };
 
-  const fetchAllRoles = async () => {
-    setLoadingRoles(true);
-    try {
-      let allRolesData = [];
-      let currentPage = 0;
-      let hasMore = true;
-
-      while (hasMore) {
-        const rolesResponse = await api.getRoles({
-          page: currentPage,
-          size: 100
-        });
-
-        // Vérifier le format de la réponse
-        if (rolesResponse && rolesResponse.data && rolesResponse.data.content) {
-          allRolesData = [...allRolesData, ...rolesResponse.data.content];
-          currentPage++;
-          hasMore = currentPage < rolesResponse.data.totalPages;
-        } else if (rolesResponse && rolesResponse.content) {
-          // Format alternatif
-          allRolesData = [...allRolesData, ...rolesResponse.content];
-          currentPage++;
-          hasMore = currentPage < rolesResponse.totalPages;
-        } else {
-          hasMore = false;
-        }
-      }
-
-      setAllRoles(allRolesData);
-    } catch (error) {
-      console.error("Erreur lors du chargement des rôles:", error);
-      setAllRoles([]);
-    } finally {
-      setLoadingRoles(false);
-    }
-  };
-
-  const handlePageChange = (page) => {
-    pagination.goToPage(page);
-    fetchData(page, pagination.pageSize, {
-      firstName: searchFirstName,
-      lastName: searchLastName,
-      matricule: searchMatricule
-    });
-  };
-
   const handleSearch = (e) => {
     e.preventDefault();
     pagination.goToPage(1);
-    fetchData(1, pagination.pageSize, {
-      firstName: searchFirstName,
-      lastName: searchLastName,
-      matricule: searchMatricule
-    });
+    fetchData(1, pagination.pageSize, searchName);
   };
 
   const handleClearSearch = () => {
-    setSearchFirstName('');
-    setSearchLastName('');
-    setSearchMatricule('');
+    setSearchName('');
     pagination.goToPage(1);
-    fetchData(1, pagination.pageSize, {});
+    fetchData(1, pagination.pageSize, '');
   };
 
-  const hasActiveFilters = searchFirstName || searchLastName || searchMatricule;
+  const handlePageChange = (page) => {
+    // Cette fonction sera appelée lorsque l'utilisateur change de page
+    fetchData(page, pagination.pageSize, searchName);
+  };
 
-  useEffect(() => {
-    fetchData(pagination.currentPage, pagination.pageSize, {
-      firstName: searchFirstName,
-      lastName: searchLastName,
-      matricule: searchMatricule
+  const handleDeleteRole = async (role) => {
+    const result = await Swal.fire({
+      title: 'Confirmer la suppression',
+      text: `Êtes-vous sûr de vouloir supprimer le rôle "${role.name}" ?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Oui, supprimer',
+      cancelButtonText: 'Annuler'
     });
-    
-    fetchAllRoles();
-  }, [pagination.currentPage, pagination.pageSize]);
 
-  const displayRoles = (userRoles) => {
-    if (!userRoles || userRoles.length === 0) return "Aucun rôle";
-    
-    const displayedRoles = userRoles.slice(0, 2);
-    const remainingCount = userRoles.length - 2;
-    
-    return (
-      <div className="flex flex-wrap gap-1">
-        {displayedRoles.map((role, index) => (
-          <span
-            key={role.role_id || role.id || index}
-            className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full dark:bg-blue-900 dark:text-blue-200"
-          >
-            {role.name}
-          </span>
-        ))}
-        {remainingCount > 0 && (
-          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full dark:bg-gray-700 dark:text-gray-300">
-            +{remainingCount}...
-          </span>
-        )}
-      </div>
-    );
+    if (result.isConfirmed) {
+      try {
+        await api.deleteRole(role.role_id);
+        Swal.fire('Supprimé!', 'Le rôle a été supprimé avec succès.', 'success');
+        // Recharger les données après suppression
+        fetchData(pagination.currentPage, pagination.pageSize, searchName);
+      } catch (error) {
+        Swal.fire('Erreur!', 'Une erreur est survenue lors de la suppression.', 'error');
+      }
+    }
   };
+
+  const handleAddRole = async () => {
+    const { value: roleName } = await Swal.fire({
+      title: 'Ajouter un nouveau rôle',
+      input: 'text',
+      inputLabel: 'Nom du rôle',
+      inputPlaceholder: 'Entrez le nom du rôle',
+      showCancelButton: true,
+      confirmButtonText: 'Enregistrer',
+      cancelButtonText: 'Annuler',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'Le nom du rôle est requis!';
+        }
+      }
+    });
+
+    if (roleName) {
+      try {
+        await api.addRole({ name: roleName });
+        Swal.fire('Succès!', 'Le rôle a été ajouté avec succès.', 'success');
+        // Recharger les données après ajout
+        fetchData(pagination.currentPage, pagination.pageSize, searchName);
+      } catch (error) {
+        Swal.fire('Erreur!', 'Une erreur est survenue lors de l\'ajout.', 'error');
+      }
+    }
+  };
+
+  // Charger les données initiales
+  useEffect(() => {
+    fetchData(pagination.currentPage, pagination.pageSize, searchName);
+  }, []);
 
   return (
     <>
       <Card
         title="GESTION DES ROLES"
-        buttonText="Ajouter un utilisateur"
-        onButtonClick={() => navigate('/ajouter-utilisateur')} 
+        addBouton={true}
+        buttonText="Ajouter un rôle"
+        onButtonClick={handleAddRole}
         icon={<FaPlus className="inline mr-1" />}
       >
         <div className="bg-gray-100 dark:bg-gray-800 pt-4 pb-2 px-4">
           <form onSubmit={handleSearch} className="space-y-3 md:space-y-0">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-              <div>
-                <label htmlFor="firstName" className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Prénom
+              <div className="md:col-span-3">
+                <label htmlFor="roleName" className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nom du rôle
                 </label>
                 <input
                   type="text"
-                  id="firstName"
-                  placeholder="Prénom"
-                  value={searchFirstName}
-                  onChange={(e) => setSearchFirstName(e.target.value)}
-                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="lastName" className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nom
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  placeholder="Nom"
-                  value={searchLastName}
-                  onChange={(e) => setSearchLastName(e.target.value)}
-                  className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="matricule" className="block text-md font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Matricule
-                </label>
-                <input
-                  type="text"
-                  id="matricule"
-                  placeholder="Matricule"
-                  value={searchMatricule}
-                  onChange={(e) => setSearchMatricule(e.target.value)}
+                  id="roleName"
+                  placeholder="Rechercher par nom de rôle"
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
                   className="block w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
@@ -262,7 +167,7 @@ import showModalRoleToUser from '../components/my-ui/showModalRoleToUser';
                   Rechercher
                 </button>
 
-                {hasActiveFilters && (
+                {searchName && (
                   <button
                     type="button"
                     onClick={handleClearSearch}
@@ -285,53 +190,50 @@ import showModalRoleToUser from '../components/my-ui/showModalRoleToUser';
         ) : (
           <BeautifulTable
             headers={[
-              { label: "Nom complet", align: "left" },
-              { label: "Matricule", align: "left" },
-              { label: "Service", align: "left" },
-              { label: "Rôles", align: "left" },
+              { label: "Nom du rôle", align: "left" },
+              { label: "Nombre de profils associés", align: "center" },
               { label: "Actions", align: "center" }
             ]}
-            data={usersData.content}
-            emptyMessage={hasActiveFilters ? "Aucun utilisateur trouvé avec ces critères" : "Aucun utilisateur trouvé"}
+            data={rolesData.content}
+            emptyMessage={searchName ? "Aucun rôle trouvé avec ce critère" : "Aucun rôle trouvé"}
             pagination={{
-              currentPage: usersData.number + 1,
-              totalPages: usersData.totalPages,
-              totalElements: usersData.totalElements,
-              pageSize: usersData.size,
+              currentPage: rolesData.number + 1,
+              totalPages: rolesData.totalPages,
+              totalElements: rolesData.totalElements,
+              pageSize: rolesData.size,
               onPageChange: handlePageChange
             }}
-            renderRow={(user) => (
-              <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+            renderRow={(role) => (
+              <tr key={role.role_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td className="p-2 sm:p-3 text-left text-xs sm:text-sm">
-                  <div className="flex flex-col">
-                    <span className="font-medium">{user.firstName} {user.lastName}</span>
-                    {user.orionSheet?.profile && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {user.orionSheet.profile}
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="p-2 sm:p-3 text-left text-xs sm:text-sm">
-                  {user.matricule || "N/A"}
-                </td>
-                <td className="p-2 sm:p-3 text-left text-xs sm:text-sm">
-                  {user.orionSheet?.service || "N/A"}
-                </td>
-                <td className="p-2 sm:p-3 text-left text-xs sm:text-sm">
-                  {displayRoles(user.roles)}
+                  <div className="font-medium">{role.name}</div>
                 </td>
                 <td className="p-2 sm:p-3 text-center text-xs sm:text-sm">
-                  <div className="flex space-x-1 justify-center text-center">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full dark:bg-blue-900 dark:text-blue-200">
+                    {role.profiles ? role.profiles.length : 0}
+                  </span>
+                </td>
+                <td className="p-2 sm:p-3 text-center text-xs sm:text-sm">
+                  <div className="flex space-x-2 justify-center">
                     <Button 
-                      onClick={() => handleEditUserRoles(user)}
+                      onClick={() => showModalRoleProfiles(role, () => {
+                        fetchData(pagination.currentPage, pagination.pageSize, searchName);
+                      })}
                       size="sm"
                       variant="outline"
-                      className="text-xs px-2 py-1"
-                      title="Modifier les rôles"
-                      disabled={loadingRoles}
+                      className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+                      title="Gérer les profils"
                     >
-                      <FaEdit className="inline h-4 w-4" />
+                      <FaUserPlus className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      onClick={() => handleDeleteRole(role)}
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                      title="Supprimer le rôle"
+                    >
+                      <FaTrash className="h-4 w-4" />
                     </Button>
                   </div>
                 </td>

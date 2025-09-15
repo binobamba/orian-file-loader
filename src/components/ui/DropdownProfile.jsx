@@ -14,7 +14,7 @@ function DropdownProfile({ align = 'right' }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const userData = await api.getLocalProfile();
+        const userData = await api.getCurrentUser();
         console.log(userData);
         setUserData(userData);
       } catch (error) {

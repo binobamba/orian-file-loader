@@ -104,14 +104,32 @@ export const api = {
   },
 
 
-  async getProfile() {
+  async getCurrentUser() {
     try {
       return await this.request('/users/current-user', {
         method: 'GET',
       });
     } catch (error) {
-      return data.getProfile;
-      // throw showError(error, 'Erreur lors du chargement du profil');
+      return data.getCurrentUser;
+    }
+  },
+
+  async getProfile() {
+    try {
+      if(VITE_MODE === 'DEV'){
+           return  data.getprofile; 
+      }
+      return await this.request('/getProfiles', {
+        method: 'GET',
+      });
+    } catch (error) {
+      return  {
+        content: [],
+        totalPages: 0,
+        totalElements: 0,
+        number: 0,
+        size: itemsPerPage
+      };
     }
   },
 
