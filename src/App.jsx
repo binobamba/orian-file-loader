@@ -15,6 +15,10 @@ import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import UserRole from './pages/User-Role';
 
+import RolePermission from './pages/RolePermission'
+import Monprofil from './pages/Monprofil'
+
+
 function App() {
   const location = useLocation();
 
@@ -69,7 +73,29 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+
+           <Route
+            path="/roles-permissions"
+            element={
+              <ProtectedRoute>
+                <RolePermission />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/monprofil"
+            element={
+              <ProtectedRoute>
+                <Monprofil />
+              </ProtectedRoute>
+            }
+          />
+        
+        
         </Route>
+
+          
 
         {/* Layout d’authentification */}
         <Route element={<AuthLayout />}>

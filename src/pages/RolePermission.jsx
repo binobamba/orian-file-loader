@@ -11,7 +11,7 @@ import { Button } from '../components/my-ui/Button';
 import { Card } from '../components/my-ui/Card';
 import showModalRoleToUser from '../components/my-ui/showModalRoleToUser';
 
-export default function UserRole() {
+ function RolePermission() {
   const [usersData, setUsersData] = useState({
     content: [],
     totalPages: 0,
@@ -203,7 +203,7 @@ export default function UserRole() {
   return (
     <>
       <Card
-        title="GESTION DES UTILISATEURS"
+        title="GESTION DES ROLES"
         buttonText="Ajouter un utilisateur"
         onButtonClick={() => navigate('/ajouter-utilisateur')} 
         icon={<FaPlus className="inline mr-1" />}
@@ -343,3 +343,5 @@ export default function UserRole() {
     </>
   );
 }
+
+export default RolePermission;

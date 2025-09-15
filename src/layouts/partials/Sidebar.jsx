@@ -6,8 +6,9 @@ import { api } from "../../services/api";
 import { 
   FaHome, FaChartLine, FaCog, FaSignOutAlt, 
   FaChevronDown, FaChevronRight, FaTimes,
-  FaUserCog
+  FaUserCog, FaLock,FaPortrait
 } from "react-icons/fa";
+
 
 function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
   const location = useLocation();
@@ -80,16 +81,16 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
       active: pathname === "/demandes" || pathname.includes("demandes"),
     },
     {
-      name: "Analytics",
-      icon: <FaChartLine className="w-5 h-5" />,
-      path: "/analytics",
-      active: pathname === "/analytics" || pathname.includes("analytics"),
-    },
-    {
       name: "Gestion des utilisateurs",
       icon: <FaUserCog className="w-5 h-5" />,
       path: "/user-role",
       active: pathname === "/user-role" || pathname.includes("user-role"),
+    },
+    {
+      name: "Roles & Permissions",
+      icon: <FaLock className="w-5 h-5" />,
+      path: "/roles-permissions",
+      active: pathname === "/roles-permissions" || pathname.includes("roles-permissions"),
     },
   ];
 
@@ -225,7 +226,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
           {/* Additional section for settings and logout */}
           <div className="mt-auto pt-8">
             <NavLink
-              to="/settings"
+              to="/monprofil"
               className={({ isActive }) =>
                 `flex items-center p-3 rounded-lg transition-all duration-200 mb-2 ${
                   isActive
@@ -234,9 +235,9 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
                 }`
               }
             >
-              <FaCog className={pathname === "/settings" ? "text-white" : "text-green-700"} />
+              <FaPortrait className={pathname === "/monprofil" ? "text-white" : "text-green-700"} />
               <span className="text-sm font-medium ml-3 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                Paramètres
+                Mon profil
               </span>
             </NavLink>
             
