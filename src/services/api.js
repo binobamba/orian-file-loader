@@ -232,14 +232,11 @@ async getRoles(params = {}) {
   
   
   async attributeRolesToUser(attributionData) {
-    try {
+  
       return await this.request('/users/attribute-role', {
         method: 'POST',
         data: attributionData,
       });
-    } catch (error) {
-      throw showError(error, 'Erreur lors de l\'attribution des rôles');
-    }
   },
 
 
@@ -274,13 +271,9 @@ async getRoles(params = {}) {
 
   
   async validIntegrationRequest(id) {
-    try {
       return await this.request(`/requests/valid/${id}`, {
         method: 'PUT',
       });
-    } catch (error) {
-      throw showError(error, 'Erreur lors de la validation de la demande');
-    }
   },
 
   
