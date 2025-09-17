@@ -6,8 +6,9 @@ import { api } from "../../services/api";
 import { 
   FaHome, FaChartLine, FaCog, FaSignOutAlt, 
   FaChevronDown, FaChevronRight, FaTimes,
-  FaUserCog, FaLock,FaPortrait
+  FaUserCog, FaLock,FaPortrait,FaListAlt
 } from "react-icons/fa";
+import { FaL } from "react-icons/fa6";
 
 
 function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
@@ -92,6 +93,13 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
       path: "/roles-permissions",
       active: pathname === "/roles-permissions" || pathname.includes("roles-permissions"),
     },
+      {
+      name: "Liste-Profils",
+      icon: <FaListAlt className="w-5 h-5" />,
+      path: "/tous-profils",
+      active: pathname === "/tous-profils" || pathname.includes("tous-profils"),
+    },
+
   ];
 
   return (

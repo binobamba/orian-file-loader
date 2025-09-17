@@ -14,6 +14,7 @@ import Demande from './pages/Demande';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import UserRole from './pages/User-Role';
+import ListeProfiles from  './pages/ListeProfiles';
 
 import RolePermission from './pages/RolePermission'
 import Monprofil from './pages/Monprofil'
@@ -83,6 +84,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+          path="/tous-profils"
+          element={
+            <ProtectedRoute>
+              <ListeProfiles />
+            </ProtectedRoute>
+          }
+          >
+
+
+          </Route>
+
+
           <Route
             path="/monprofil"
             element={

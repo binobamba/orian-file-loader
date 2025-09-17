@@ -57,7 +57,6 @@ function Header({
 
           {/* Header: Right side */}
           <div className="flex items-center space-x-4">            
-            <ThemeToggle />
             <div className="border-l border-gray-200 dark:border-gray-700 h-6 mx-2"></div>
             <UserMenu align="right" />
           </div>
