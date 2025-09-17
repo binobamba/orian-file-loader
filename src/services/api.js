@@ -105,33 +105,50 @@ export const api = {
 
 
   async getCurrentUser() {
-    try {
-      return await this.request('/users/current-user', {
-        method: 'GET',
-      });
-    } catch (error) {
-      return data.getCurrentUser;
-    }
-  },
+  if (VITE_MODE === 'DEV') {
+    return data.getCurrentUser;
+  }
+  try {
+    return await this.request('/users/current-user', {
+      method: 'GET',
+    });
+  } catch (error) {
+    const status = error?.response?.status;
 
-  async getProfile() {
-    try {
-      if(VITE_MODE === 'DEV'){
-           return  data.getprofile; 
-      }
-      return await this.request('/getProfiles', {
-        method: 'GET',
-      });
-    } catch (error) {
-      return  {
-        content: [],
-        totalPages: 0,
-        totalElements: 0,
-        number: 0,
-        size: itemsPerPage
-      };
+    if (status === 401) {
+      Toast("warning", "Session expirée, redirection vers la page de connexion", 3000);
+      window.location.href = "/login";
+      return null;
     }
-  },
+
+    Toast("error", error?.message || "Une erreur s'est produite lors de la récupération de l'utilisateur", 4000);
+    return null;
+  }
+},
+
+
+
+  async getProfile(page = 0, size = 10, sort = 'libelle') {
+    if (VITE_MODE === 'DEV') {
+      return  data.getProfiles
+    }
+    try {
+      const response = await this.request('/profiles', {
+        method: 'GET',
+        params: {
+          page: page,
+          size: size,
+          sort: sort
+        }
+      });
+      return response.data;
+    }
+    catch (error) {
+      console.error("Erreur getProfile:", error);
+      Toast("error","Une erreur s'est produite")
+      return data.getProfilesError
+    }
+},
 
   async getLocalProfile() {
     return data?.getprofile;
@@ -187,15 +204,12 @@ async getRoles(params = {}) {
 
 
   async updateRole(id, roleData) {
-    try {
+
       return await this.request(`/roles/${id}`, {
         method: 'PUT',
         data: roleData,
       });
-    } catch (error) {
-      console.error("Erreur updateRole:", error);
-      return { data: [] }; 
-    }
+    
   },
 
   
@@ -213,15 +227,12 @@ async getRoles(params = {}) {
 
   
   async removeProfilesFromRole(attributionData) {
-    try {
+ 
       return await this.request('/roles/remove-profiles', {
         method: 'DELETE',
         data: attributionData,
       });
-    } catch (error) {
-      console.error("Erreur removeProfilesFromRole:", error);
-      return { data: [] }; 
-    }
+    
   },
 
   // ==================== USERS MANAGEMENT ====================

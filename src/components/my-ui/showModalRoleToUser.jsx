@@ -307,7 +307,7 @@ const showModalRoleToUser = (user, allRoles, onSuccessCallback = null) => {
 
  MySwal.fire({
     title: `<span class="text-green-900 dark:text-gray-200 text-lg md:text-xl">Modification des rôles - ${user.firstName} ${user.lastName}</span>`,
-    width: '70%',
+    width: '80%',
     heightAuto: false,
     customClass: {
       popup: 'max-h-[90vh] h-auto overflow-hidden dark:bg-gray-800',

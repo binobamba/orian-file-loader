@@ -7,6 +7,7 @@ const MySwal = withReactContent(Swal);
 
 const showModalRoleProfiles = (role, onSuccessCallback = null) => {
   let selectedProfiles = role.profiles ? [...role.profiles] : [];
+  let initialSelectedProfiles = role.profiles ? [...role.profiles] : []; // Sauvegarde des profils initiaux
   let currentAssignedPage = 1;
   let currentAvailablePage = 1;
   let assignedSearchTerm = '';
@@ -299,20 +300,56 @@ const showModalRoleProfiles = (role, onSuccessCallback = null) => {
     try {
       Swal.showLoading();
       
-      const profileIds = selectedProfiles.map(profile => profile.id);
-      const data = {
-        roleId: role.role_id,
-        profileIds: profileIds
-      };
+      // Identifier les profils à ajouter et à supprimer
+      const profilesToAdd = selectedProfiles.filter(profile => 
+        !initialSelectedProfiles.some(p => p.id === profile.id)
+      );
+      
+      const profilesToRemove = initialSelectedProfiles.filter(profile => 
+        !selectedProfiles.some(p => p.id === profile.id)
+      );
 
-      await api.assignProfilesToRole(data);
+      // Ajouter les nouveaux profils
+      if (profilesToAdd.length > 0) {
+        const addData = {
+          roleId: role.role_id,
+          profileIds: profilesToAdd.map(profile => profile.id)
+        };
+        await api.assignProfilesToRole(addData);
+      }
+
+      // Supprimer les profils retirés
+      if (profilesToRemove.length > 0) {
+        const removeData = {
+          roleId: role.role_id,
+          profileIds: profilesToRemove.map(profile => profile.id)
+        };
+        await api.removeProfilesFromRole(removeData);
+      }
+
+      // Si aucun changement, on ferme simplement
+      if (profilesToAdd.length === 0 && profilesToRemove.length === 0) {
+        Swal.hideLoading();
+        Swal.close();
+        return true;
+      }
       
       Swal.hideLoading();
       Swal.close();
       
-      Swal.fire({
+      // Afficher un message de succès détaillé
+      let successMessage = 'Les modifications ont été appliquées avec succès.';
+      if (profilesToAdd.length > 0 && profilesToRemove.length > 0) {
+        successMessage = `${profilesToAdd.length} profil(s) ajouté(s) et ${profilesToRemove.length} profil(s) retiré(s) avec succès.`;
+      } else if (profilesToAdd.length > 0) {
+        successMessage = `${profilesToAdd.length} profil(s) ajouté(s) avec succès.`;
+      } else if (profilesToRemove.length > 0) {
+        successMessage = `${profilesToRemove.length} profil(s) retiré(s) avec succès.`;
+      }
+
+      await Swal.fire({
         title: 'Succès',
-        text: 'Les profils ont été modifiés avec succès',
+        text: successMessage,
         icon: 'success',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'OK'
@@ -325,9 +362,13 @@ const showModalRoleProfiles = (role, onSuccessCallback = null) => {
       return true;
     } catch (error) {
       Swal.hideLoading();
-      Swal.showValidationMessage(
-        error.message || 'Une erreur est survenue lors de la modification'
-      );
+      
+      let errorMessage = 'Une erreur est survenue lors de la modification';
+      if (error.response?.data?.message) {
+        errorMessage += `: ${error.response.data.message}`;
+      }
+      
+      Swal.showValidationMessage(errorMessage);
       
       return false;
     }
@@ -338,7 +379,7 @@ const showModalRoleProfiles = (role, onSuccessCallback = null) => {
     await fetchAvailableProfiles(currentAvailablePage, availableSearchTerm);
     
     MySwal.fire({
-      title: `<span class="text-xl font-bold dark:text-gray-200">Gestion des profils - ${role.name}</span>`,
+      title: `<span class="text-xl text-green-900 font-bold dark:text-gray-200">Attribution de profils au rôle - ${role.name}</span>`,
       width: '80%',
       heightAuto: false,
       customClass: {
@@ -349,6 +390,9 @@ const showModalRoleProfiles = (role, onSuccessCallback = null) => {
       },
       html: `
         <div class="text-left">
+          <div class="mb-4 text-sm text-gray-600 dark:text-gray-300">
+            Sélectionnez les profils à attribuer au rôle. Les modifications seront appliquées après validation.
+          </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-base mb-3">Profils attribués (${selectedProfiles.length})</h4>

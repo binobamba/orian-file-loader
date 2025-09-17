@@ -9,13 +9,62 @@
 
 
   "getCurrentUser":{
-      "id": "6f24936f-11c2-4f4d-9e62-21c92e1eeb52",
-      "nom": "Bamba",
-      "prenoms": "Fulgence",
-      "code": "m1321",
-      "isUser": true,
-      "email": "fulgence.bamba@example.com"
-  },
+                    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "firstName": "Jean",
+                    "lastName": "Dupont",
+                    "email": "jean.dupont@example.com",
+                    "phone": "+33 1 23 45 67 89",
+                    "address": "123 Rue de la République, 75001 Paris",
+                    "matricule": "EMP12345",
+                    "orionSheet": {
+                        "id": 42,
+                        "operatorCode": "OP789",
+                        "service": "Développement",
+                        "servicesManaged": [
+                            "Ressources Humaines",
+                            "Informatique",
+                            "Développement Logiciel"
+                        ],
+                        "matricule": "EMP12345",
+                        "profile": "Développeur Senior"
+                    },
+                    "roles": [
+                        {
+                            "role_id": 1,
+                            "name": "Administrateur",
+                            "editable": true,
+                            "profiles": [
+                                {
+                                    "id": 101,
+                                    "code": "ADMIN",
+                                    "libelle": "Administrateur système"
+                                },
+                                {
+                                    "id": 102,
+                                    "code": "USER_MGT",
+                                    "libelle": "Gestion des utilisateurs"
+                                }
+                            ]
+                        },
+                        {
+                            "role_id": 2,
+                            "name": "Développeur",
+                            "editable": false,
+                            "profiles": [
+                                {
+                                    "id": 201,
+                                    "code": "DEV",
+                                    "libelle": "Développeur"
+                                },
+                                {
+                                    "id": 202,
+                                    "code": "TEST",
+                                    "libelle": "Testeur"
+                                }
+                            ]
+                        }
+                    ]
+                },
 
   "list_demande":{
       "content": [
@@ -619,86 +668,89 @@
           "empty": false
         },
 
-  "getProfiles": {
-      "totalPages": 1,
-      "totalElements": 10,
-      "size": 10,
-      "content": [
-        {
-          "id": 1,
-          "code": "SUPER_ADMIN",
-          "libelle": "Super Administrateur"
-        },
-        {
-          "id": 2,
-          "code": "ADMIN",
-          "libelle": "Administrateur"
-        },
-        {
-          "id": 3,
-          "code": "MANAGER",
-          "libelle": "Gestionnaire"
-        },
-        {
-          "id": 4,
-          "code": "USER",
-          "libelle": "Utilisateur"
-        },
-        {
-          "id": 5,
-          "code": "CLIENT",
-          "libelle": "Client"
-        },
-        {
-          "id": 6,
-          "code": "AGENT",
-          "libelle": "Agent commercial"
-        },
-        {
-          "id": 7,
-          "code": "MODERATOR",
-          "libelle": "Modérateur"
-        },
-        {
-          "id": 8,
-          "code": "DEV",
-          "libelle": "Développeur"
-        },
-        {
-          "id": 9,
-          "code": "TESTER",
-          "libelle": "Testeur QA"
-        },
-        {
-          "id": 10,
-          "code": "GUEST",
-          "libelle": "Invité"
-        }
-      ],
-      "number": 0,
-      "sort": {
-        "empty": false,
-        "unsorted": false,
-        "sorted": true
-      },
-      "first": true,
-      "last": true,
-      "numberOfElements": 10,
-      "pageable": {
-        "offset": 0,
+  "getProfiles":{
+        "totalPages": 1,
+        "totalElements": 5,
+        "size": 10,
+        "content": [
+          {
+            "id": 101,
+            "code": "ADMIN",
+            "libelle": "Administrateur système"
+          },
+          {
+            "id": 102,
+            "code": "MANAGER",
+            "libelle": "Gestionnaire de projet"
+          },
+          {
+            "id": 103,
+            "code": "USER",
+            "libelle": "Utilisateur standard"
+          },
+          {
+            "id": 104,
+            "code": "REPORT",
+            "libelle": "Gestionnaire de rapports"
+          },
+          {
+            "id": 105,
+            "code": "SUPPORT",
+            "libelle": "Support technique"
+          }
+        ],
+        "number": 0,
         "sort": {
           "empty": false,
           "unsorted": false,
           "sorted": true
         },
-        "unpaged": false,
-        "pageNumber": 0,
-        "pageSize": 10,
-        "paged": true
+        "first": true,
+        "last": true,
+        "numberOfElements": 5,
+        "pageable": {
+          "offset": 0,
+          "sort": {
+            "empty": false,
+            "unsorted": false,
+            "sorted": true
+          },
+          "unpaged": false,
+          "pageNumber": 0,
+          "pageSize": 10,
+          "paged": true
+        },
+        "empty": false
       },
-      "empty": false
+  
+  "getProfilesError":{
+  "totalPages": 0,
+  "totalElements": 0,
+  "size": 0,
+  "content": [],
+  "number": 0,
+  "sort": {
+    "empty": true,
+    "unsorted": true,
+    "sorted": false
+  },
+  "first": true,
+  "last": true,
+  "numberOfElements": 0,
+  "pageable": {
+    "offset": 0,
+    "sort": {
+      "empty": true,
+      "unsorted": true,
+      "sorted": false
+    },
+    "unpaged": false,
+    "pageNumber": 0,
+    "pageSize": 0,
+    "paged": false
+  },
+  "empty": true
 }
-
 
 
   }
