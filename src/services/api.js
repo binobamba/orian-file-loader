@@ -3,28 +3,36 @@ import Swal from 'sweetalert2';
 import { Toast } from './notification';
 import data from './ExempleData.json' assert { type: 'json' };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9006';
-const VITE_MODE = import.meta.env.VITE_MODE ||'DEV'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const VITE_MODE = import.meta.env.VITE_MODE || 'DEV';
 
-
-
-const getAuthToken = () => localStorage.getItem('token');
+const getAuthToken = () => {
+  const token = sessionStorage.getItem("token");
+  return token;
+};
 
 // Configuration de base d'Axios
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Token': `Bearer ${getAuthToken()}`,
   },
 });
+
+export const setAuthToken = (token) => {
+  if (token) {
+    axiosInstance.defaults.headers['Token'] = `Bearer ${token}`;
+  } else {
+    delete axiosInstance.defaults.headers['Token'];
+  }
+};
 
 // Intercepteur pour ajouter le token d'authentification
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = getAuthToken();
     if (token) {
-      config.headers.Token = `${token}`;
+      config.headers.Token = `Bearer ${token}`;
     }
     return config;
   },
@@ -33,162 +41,140 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Intercepteur pour gérer les réponses
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
 // Fonction utilitaire pour afficher les erreurs
-const showError = (error, defaultMessage = 'Une erreur est survenue') => {
+const showError = (error = "error", defaultMessage = 'Une erreur est survenue') => {
   const errorMessage = error.response?.data?.message || error.message || defaultMessage;
   Toast("error", errorMessage);
-  console.error('API Error:', error);
   return error;
 };
 
 export const api = {
-
-
+  // Fonction générique pour les requêtes API
   async request(endpoint, options = {}) {
-    return await axiosInstance({
+    try {
+      return await axiosInstance({
         url: endpoint,
         method: options.method || 'GET',
         data: options.data,
         params: options.params,
         ...options,
       });
+    } catch (error) {
+      if (error.response?.status === 401) {
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('userData');
+        window.location.href = '/login';
+      }
+      throw error;
+    }
   },
 
   // ==================== AUTHENTICATION ====================
-
   async login(credentials) {
     try {
-      const response = await this.request('/users/login', {
-        method: 'POST',
-        data: {
+      if (VITE_MODE === 'DEV') {
+        return data.login;
+      } else {
+        const response = await axios.post(`${API_BASE_URL}/users/login`, {
           login: credentials.email,
           password: credentials.password,
-        },
-      });
-      
-      if (response.data?.token) {
-        localStorage.setItem('token', response.data.token);
-        Swal.fire({
-          icon: 'success',
-          title: 'Connexion réussie',
-          text: 'Vous êtes maintenant connecté',
-          timer: 2000,
-          showConfirmButton: false,
         });
+        return response.data;
       }
-      return response;
     } catch (error) {
-      console.log(error);
-      return mockData.login; 
+      console.error("Erreur lors de la connexion:", error.response?.data);
+      throw error.response?.data || error;
     }
   },
 
-
-  async logout() {
-   if (getAuthToken()) {
-    localStorage.removeItem('token');
-   }
-   window.location.href = '/login';
+  logout() {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('userData');
+    window.location.href = '/login';
   },
-
 
   async getCurrentUser() {
-  if (VITE_MODE === 'DEV') {
-    return data.getCurrentUser;
-  }
-  try {
-    return await this.request('/users/current-user', {
-      method: 'GET',
-    });
-  } catch (error) {
-    const status = error?.response?.status;
+    if (VITE_MODE === 'DEV') {
+      return data.getCurrentUser;
+    }
+    
+    const userData = sessionStorage.getItem('userData');
+    if (userData) {
+      return JSON.parse(userData);
+    }
 
-    if (status === 401) {
-      Toast("warning", "Session expirée, redirection vers la page de connexion", 3000);
-      window.location.href = "/login";
+    try {
+      const response = await this.request('/users/current-user', {
+        method: 'GET',
+      });
+     
+      if (response.data) {
+        sessionStorage.setItem('userData', JSON.stringify(response.data));
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'utilisateur:", error);
       return null;
     }
+  },
 
-    Toast("error", error?.message || "Une erreur s'est produite lors de la récupération de l'utilisateur", 4000);
-    return null;
-  }
-},
+  // ==================== PROFILE MANAGEMENT ====================
+  async getProfile(data) {
 
-
-
-  async getProfile(page = 0, size = 10, sort = 'libelle') {
     if (VITE_MODE === 'DEV') {
-      return  data.getProfiles
+      return data.getProfiles;
     }
+    
     try {
       const response = await this.request('/profiles', {
         method: 'GET',
         params: {
-          page: page,
-          size: size,
-          sort: sort
+          code: data.code_ || '',
+          page: data.page_ || 0,
+          size: data.size_ || 10, 
         }
       });
       return response.data;
+    } catch (error) {
+      console.error("Erreur lors de la récupération des profils:", error);
+      throw error;
     }
-    catch (error) {
-      console.error("Erreur getProfile:", error);
-      Toast("error","Une erreur s'est produite")
-      return data.getProfilesError
-    }
-},
+  },
 
   async getLocalProfile() {
-    return data?.getprofile;
-    // const userData = JSON.parse(localStorage.getItem('userData'));
-    // if (!userData) {
-    //   return data.getProfile;
-    // }
-    // return userData;
+    if (VITE_MODE === 'DEV') {
+      return data?.getprofile;
+    }
+    
+    const userData = sessionStorage.getItem('userData');
+    if (!userData) {
+      window.location.href = '/login';
+      return null;
+    }
+    return JSON.parse(userData);
   },
 
   // ==================== ROLES MANAGEMENT ====================
+  async getRoles(params = {}) {
+    if (VITE_MODE === 'DEV') {
+      return { data: data.getRols };
+    }
 
-
-async getRoles(params = {}) {
-  if(VITE_MODE === 'DEV'){
-       return { data: data.getRols }; 
-  }
-
-  try {
-    const response = await this.request('/roles', {
-      method: 'GET',
-      params: {
-        name: params.name || '',
-        page: params.page || 0,
-        size: params.size || 10,
-      }
-    });    
-    return response.data;
-  } catch (error) {
-    console.error("Erreur getRoles:", error);
-    return {
-      totalPages: 0,
-      totalElements: 0,
-      size: params.size || 10,
-      content: [],
-      number: params.page || 0,
-      empty: true
-    };
-  }
-},
+    try {
+      const response = await this.request('/roles', {
+        method: 'GET',
+        params: {
+          name: params.name || '',
+          page: params.page || 0,
+          size: params.size || 10,
+        }
+      });
+      return response;
+    } catch (error) {
+      console.error("Erreur getRoles:", error);
+      throw error;
+    }
+  },
 
   async addRole(roleData) {
     try {
@@ -198,21 +184,22 @@ async getRoles(params = {}) {
       });
     } catch (error) {
       console.error("Erreur addRole:", error);
-      return { data: [] }; 
+      throw error;
     }
   },
 
-
   async updateRole(id, roleData) {
-
+    try {
       return await this.request(`/roles/${id}`, {
         method: 'PUT',
         data: roleData,
       });
-    
+    } catch (error) {
+      console.error("Erreur updateRole:", error);
+      throw error;
+    }
   },
 
-  
   async assignProfilesToRole(attributionData) {
     try {
       return await this.request('/roles/assign-profiles', {
@@ -221,26 +208,28 @@ async getRoles(params = {}) {
       });
     } catch (error) {
       console.error("Erreur assignProfilesToRole:", error);
-      return { data: [] }; 
+      throw error;
     }
   },
 
-  
   async removeProfilesFromRole(attributionData) {
- 
+    try {
       return await this.request('/roles/remove-profiles', {
         method: 'DELETE',
         data: attributionData,
       });
-    
+    } catch (error) {
+      console.error("Erreur removeProfilesFromRole:", error);
+      throw error;
+    }
   },
 
   // ==================== USERS MANAGEMENT ====================
-
   async getUsers(params = {}) {
-    if(VITE_MODE === 'DEV'){
-       return { data: data.users }; 
+    if (VITE_MODE === 'DEV') {
+      return { data: data.users };
     }
+    
     try {
       return await this.request('/users', {
         method: 'GET',
@@ -254,21 +243,21 @@ async getRoles(params = {}) {
       });
     } catch (error) {
       console.error("Erreur getUsers:", error);
-      return data.users; 
+      throw error;
     }
-  },
+  }, 
 
-  
-  
   async attributeRolesToUser(attributionData) {
-  
-      return await this.request('/users/attribute-role', {
+    try {
+      return await this.request('/users/assign-role', {
         method: 'POST',
         data: attributionData,
       });
+    } catch (error) {
+      console.error("Erreur attributeRolesToUser:", error);
+      throw error;
+    }
   },
-
-
 
   async removeRolesFromUser(attributionData) {
     try {
@@ -282,108 +271,109 @@ async getRoles(params = {}) {
   },
 
   // ==================== INTEGRATION REQUESTS ====================
-
-  
-  
   async searchIntegrationRequests(searchData) {
-    console.log("searchData", searchData);
+    if (VITE_MODE === 'DEV') {
+      return { data: data?.list_demande };
+    }
+    
     try {
       return await this.request('/requests', {
         method: 'POST',
         data: searchData,
       });
     } catch (error) {
-      return {data:data?.list_demande};
-      // throw showError(error, 'Erreur lors de la recherche des demandes');
+      console.error("Erreur searchIntegrationRequests:", error);
+      throw error;
     }
   },
 
-  
   async validIntegrationRequest(id) {
-      return await this.request(`/requests/valid/${id}`, {
+    try {
+      return await this.request(`/requests/${id}`, {
         method: 'PUT',
       });
+    } catch (error) {
+      console.error("Erreur validIntegrationRequest:", error);
+      throw error;
+    }
   },
 
-  
-
   async cancelIntegrationRequest(id) {
-  Swal.fire({
-    title: "Êtes-vous sûr de vouloir annuler cette demande ?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Confirmer l'annulation",
-    confirmButtonColor: "red",
-    cancelButtonText: "Annuler",
-    showLoaderOnConfirm: true,
-    preConfirm: async () => {
-      try {
+    try {
+      const result = await Swal.fire({
+        title: "Êtes-vous sûr de vouloir annuler cette demande ?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Confirmer l'annulation",
+        confirmButtonColor: "red",
+        cancelButtonText: "Annuler",
+      });
+
+      if (result.isConfirmed) {
         const response = await this.request(`/requests/cancel/${id}`, {
           method: 'PUT',
         });
 
-        // Vérifie si le code de retour est 200
         if (response.status === 200) {
+          Swal.fire({
+            title: "Demande annulée",
+            text: "La demande a été annulée avec succès.",
+            icon: "success"
+          });
           return true;
         } else {
           throw new Error("La demande n'a pas pu être annulée.");
         }
-      } catch (error) {
-        Swal.fire({
-          title: "Erreur de suppression",
-          text: error.message || "Une erreur est survenue lors de l'annulation.",
-          icon: "error"
-        });
-        return false;
       }
-    },
-    allowOutsideClick: () => !Swal.isLoading()
-  }).then((result) => {
-    if (result.isConfirmed && result.value === true) {
+      return false;
+    } catch (error) {
       Swal.fire({
-        title: "Demande annulée",
-        text: "La demande a été annulée avec succès.",
-        icon: "success"
+        title: "Erreur d'annulation",
+        text: error.message || "Une erreur est survenue lors de l'annulation.",
+        icon: "error"
       });
+      throw error;
     }
-  });
-},
-
+  },
 
   // ==================== FILE OPERATIONS ====================
-
-  
   async processFile(file, fileType) {
-      const formData = new FormData();
-      formData.append('file', file);
+    const formData = new FormData();
+    formData.append('file', file);
 
-       if(VITE_MODE === 'DEV'){
-      return {data:data.processFile}
-      }
+    if (VITE_MODE === 'DEV') {
+      return { data: data.processFile };
+    }
 
+    try {
       return await axiosInstance.post(`/file/process-file?fileType=${fileType}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-    
+    } catch (error) {
+      console.error("Erreur processFile:", error);
+      throw error;
+    }
   },
 
-  
   async analyzeOperationFile(file, fileType) {
-     if(VITE_MODE === 'DEV'){
-          return {data:data.analyse}
-      }
+    if (VITE_MODE === 'DEV') {
+      return { data: data.analyse };
+    }
 
-    
-      const formData = new FormData();
-      formData.append('file', file);
+    const formData = new FormData();
+    formData.append('file', file);
 
+    try {
       return await axiosInstance.post(`/file/analyze-operation-file?fileType=${fileType}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-    
+    } catch (error) {
+      console.error("Erreur analyzeOperationFile:", error);
+      throw error;
+    }
   }
 };

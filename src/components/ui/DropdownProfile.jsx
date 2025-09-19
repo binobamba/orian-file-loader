@@ -10,21 +10,30 @@ function DropdownProfile({ align = 'right' }) {
   const [userData, setUserData] = useState({});
   const trigger = useRef(null);
   const dropdown = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const userData = await api.getCurrentUser();
-        console.log(userData);
+      const userData = await api.getCurrentUser();
+      if (userData) {
         setUserData(userData);
-      } catch (error) {
-        console.error("Erreur lors de la récupération du profil :", error);
+      } else {
+        navigate('/login');
       }
     };
   
     fetchData();
   }, []);
-  
+
+  // Fonction de déconnexion
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+      navigate('/login');
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion :", error);
+    }
+  };
 
   // Fermer le dropdown en cliquant à l'extérieur
   useEffect(() => {
@@ -35,7 +44,6 @@ function DropdownProfile({ align = 'right' }) {
           trigger.current.contains(target)) return;
       setDropdownOpen(false);
     };
-    
     document.addEventListener('click', clickHandler);
     return () => document.removeEventListener('click', clickHandler);
   }, [dropdownOpen]);
@@ -50,6 +58,12 @@ function DropdownProfile({ align = 'right' }) {
     document.addEventListener('keydown', keyHandler);
     return () => document.removeEventListener('keydown', keyHandler);
   }, [dropdownOpen]);
+
+  // Vérifier si l'utilisateur est administrateur
+  const isAdmin = userData?.roles?.some(role => 
+    role.name.toLowerCase().includes('admin') || 
+    role.name.toLowerCase().includes('administrateur')
+  );
 
   return (
     <div className="relative inline-flex">
@@ -68,10 +82,10 @@ function DropdownProfile({ align = 'right' }) {
           />
           <div className="ml-2 text-left hidden md:block">
             <span className="block text-sm font-medium text-gray-800 dark:text-white truncate max-w-[120px]">
-              {userData.nom}
+              {userData?.firstName} {userData.lastName}
             </span>
             <span className="block text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">
-              {userData.code}
+              {userData?.orionSheet?.profile || userData?.matricule}
             </span>
           </div>
           <FaAngleDown
@@ -105,40 +119,31 @@ function DropdownProfile({ align = 'right' }) {
           {/* En-tête utilisateur */}
           <div className="px-4 py-3">
             <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
-              {userData.nom} {userData.prenoms}
+              {userData.firstName} {userData.lastName}
             </p>
             <p className="text-xs mt-1 text-gray-500 dark:text-gray-400 italic">
-              {userData.isUser ? "Utilisateur" : "Administrateur"} • {userData.code}
-            </p>
-          </div>
+              {userData?.orionSheet?.profile} • {userData?.matricule}
+            </p>          </div>
 
           {/* Liens de navigation */}
           <div className="py-2">
             <Link
               className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-300 transition-colors duration-150"
-              to="/profile"
+              to="/mon-profil"
               onClick={() => setDropdownOpen(false)}
               role="menuitem"
             >
               <FaUserCog className="w-4 h-4 mr-3" aria-hidden="true" />
               Mon profil
             </Link>
-            <Link
-              className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-300 transition-colors duration-150"
-              to="/settings"
-              onClick={() => setDropdownOpen(false)}
-              role="menuitem"
-            >
-              <FaUserCog className="w-4 h-4 mr-3" aria-hidden="true" />
-              Paramètres
-            </Link>
+            
           </div>
 
           {/* Déconnexion */}
           <div className="py-2">
             <button
               className="flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
-              onClick={api.logout}
+              onClick={handleLogout}
               role="menuitem"
             >
               <FaSignOutAlt className="w-4 h-4 mr-3" aria-hidden="true" />

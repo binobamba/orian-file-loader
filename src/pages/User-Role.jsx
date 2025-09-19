@@ -11,6 +11,21 @@ import { Button } from '../components/my-ui/Button';
 import { Card } from '../components/my-ui/Card';
 import showModalRoleToUser from '../components/my-ui/showModalRoleToUser';
 
+// Fonction utilitaire pour supprimer les doublons de rôles
+const removeDuplicateRoles = (roles) => {
+  if (!roles || !Array.isArray(roles)) return [];
+  
+  const seen = new Set();
+  return roles.filter(role => {
+    const roleId = role.role_id || role.id;
+    if (!roleId || seen.has(roleId)) {
+      return false;
+    }
+    seen.add(roleId);
+    return true;
+  });
+};
+
 export default function UserRole() {
   const [usersData, setUsersData] = useState({
     content: [],
@@ -30,7 +45,6 @@ export default function UserRole() {
 
   const pagination = usePagination(1, 10);
 
-  // Fonction de recherche avec debounce
   const debounce = (func, wait) => {
     let timeout;
     return function executedFunction(...args) {
@@ -44,9 +58,15 @@ export default function UserRole() {
   };
 
   const handleEditUserRoles = (user) => {
+    // Nettoyer les doublons dans les rôles de l'utilisateur avant de les passer au modal
+    const cleanedUser = {
+      ...user,
+      roles: removeDuplicateRoles(user.roles || [])
+    };
+
     if (allRoles.length === 0) {
       fetchAllRoles().then(() => {
-        showModalRoleToUser(user, allRoles, () => {
+        showModalRoleToUser(cleanedUser, allRoles, () => {
           fetchData(pagination.currentPage, pagination.pageSize, {
             firstName: searchFirstName,
             lastName: searchLastName,
@@ -65,7 +85,7 @@ export default function UserRole() {
       return;
     }
     
-    showModalRoleToUser(user, allRoles, () => {
+    showModalRoleToUser(cleanedUser, allRoles, () => {
       fetchData(pagination.currentPage, pagination.pageSize, {
         firstName: searchFirstName,
         lastName: searchLastName,
@@ -86,7 +106,15 @@ export default function UserRole() {
       });
       
       if (usersResponse && usersResponse.data) {
-        setUsersData(usersResponse.data);
+        // Nettoyer les doublons dans les données reçues
+        const cleanedData = {
+          ...usersResponse.data,
+          content: usersResponse.data.content.map(user => ({
+            ...user,
+            roles: removeDuplicateRoles(user.roles || [])
+          }))
+        };
+        setUsersData(cleanedData);
       } else {
         console.error("Format de réponse inattendu:", usersResponse);
         setUsersData({
@@ -165,7 +193,6 @@ export default function UserRole() {
 
   const hasActiveFilters = searchFirstName || searchLastName || searchMatricule;
 
-  // Recherche en temps réel avec debounce
   useEffect(() => {
     const debouncedFetch = debounce(() => {
       fetchData(1, pagination.pageSize, {
@@ -185,14 +212,16 @@ export default function UserRole() {
   const displayRoles = (userRoles) => {
     if (!userRoles || userRoles.length === 0) return "Aucun rôle";
     
-    const displayedRoles = userRoles.slice(0, 2);
-    const remainingCount = userRoles.length - 2;
+    // Utiliser la fonction de nettoyage pour l'affichage aussi
+    const uniqueRoles = removeDuplicateRoles(userRoles);
+    const displayedRoles = uniqueRoles.slice(0, 2);
+    const remainingCount = uniqueRoles.length - 2;
     
     return (
       <div className="flex flex-wrap gap-1">
         {displayedRoles.map((role, index) => (
           <span
-            key={role.role_id || role.id || index}
+            key={`${role.role_id || role.id}-${index}`}
             className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full dark:bg-blue-900 dark:text-blue-200"
           >
             {role.name}
@@ -208,117 +237,110 @@ export default function UserRole() {
   };
 
   return (
-<div className="min-h-screen bg-gray-100 pr-5">
-  <Card
-    title="GESTION DES UTILISATEURS"
-    buttonText="Ajouter un utilisateur"
-    onButtonClick={() => navigate('/ajouter-utilisateur')} 
-    icon={<FaPlus className="inline mr-1" />}
-  >
-    {/* Conteneur avec défilement et en-tête fixe */}
-    <div className="h-[70vh] overflow-y-auto">
+    <div className="min-h-screen bg-gray-100 pr-5">
+      <Card
+        title="GESTION DES UTILISATEURS"
+        buttonText="Ajouter un utilisateur"
+        onButtonClick={() => navigate('/ajouter-utilisateur')} 
+        icon={<FaPlus className="inline mr-1" />}
+      >
+        <div className="h-[70vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white z-10 pt-4 pb-2 border-b shadow-sm">
+  <div className="overflow-x-auto md:overflow-visible">
+    <div className="grid grid-cols-3 md:grid-cols-4 gap-4 items-end min-w-[700px] md:min-w-0">
       
-      {/* En-tête fixe */}
-      <div className="sticky top-0 bg-white z-10 pt-4 pb-2 border-b shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          
-          {/* Champ recherche Prénom */}
-          <div className="flex flex-col">
-            <label
-              htmlFor="firstName"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Prénom
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaSearch className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                id="firstName"
-                placeholder="Prénom"
-                value={searchFirstName}
-                onChange={(e) => setSearchFirstName(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
-                           bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                           focus:ring-green-800 focus:border-green-800 
-                           dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
+      <div className="flex flex-col">
+        <label
+          htmlFor="firstName"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Prénom
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FaSearch className="text-gray-400" />
           </div>
-
-          {/* Champ recherche Nom */}
-          <div className="flex flex-col">
-            <label
-              htmlFor="lastName"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Nom
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaSearch className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                id="lastName"
-                placeholder="Nom"
-                value={searchLastName}
-                onChange={(e) => setSearchLastName(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
-                           bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                           focus:ring-green-800 focus:border-green-800 
-                           dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Champ recherche Matricule */}
-          <div className="flex flex-col">
-            <label
-              htmlFor="matricule"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Matricule
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaSearch className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                id="matricule"
-                placeholder="Matricule"
-                value={searchMatricule}
-                onChange={(e) => setSearchMatricule(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
-                           bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                           focus:ring-green-800 focus:border-green-800 
-                           dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Bouton Effacer */}
-          <div className="flex gap-2 items-end">
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={handleClearSearch}
-                className="px-3 py-2 text-sm rounded-md bg-gray-500 text-white hover:bg-gray-600"
-              >
-                <FaTimes className="inline mr-1" />
-                Effacer
-              </button>
-            )}
-          </div>
+          <input
+            type="text"
+            id="firstName"
+            placeholder="Prénom"
+            value={searchFirstName}
+            onChange={(e) => setSearchFirstName(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
+                     bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
+                     focus:ring-green-800 focus:border-green-800 
+                     dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
         </div>
       </div>
 
-      {/* Contenu scrollable */}
-      <div className="py-4 space-y-6">
-            
+      <div className="flex flex-col">
+        <label
+          htmlFor="lastName"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Nom
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FaSearch className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            id="lastName"
+            placeholder="Nom"
+            value={searchLastName}
+            onChange={(e) => setSearchLastName(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
+                     bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
+                     focus:ring-green-800 focus:border-green-800 
+                     dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col">
+        <label
+          htmlFor="matricule"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Matricule
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FaSearch className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            id="matricule"
+            placeholder="Matricule"
+            value={searchMatricule}
+            onChange={(e) => setSearchMatricule(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
+                     bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
+                     focus:ring-green-800 focus:border-green-800 
+                     dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 items-end">
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={handleClearSearch}
+            className="px-3 py-2 text-sm rounded-md bg-gray-500 text-white hover:bg-gray-600 whitespace-nowrap"
+          >
+            <FaTimes className="inline mr-1" />
+            Effacer
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
+          <div className="py-4 space-y-6">
             <div className="flex-1 overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center h-64">
@@ -328,7 +350,7 @@ export default function UserRole() {
                   </div>
                 </div>
               ) : (
-                <div className="h-full overflow-max">
+                <div className="h-full overflow-auto">
                   <BeautifulTable
                     headers={[
                       { label: "Nom complet", align: "left" },
@@ -387,13 +409,10 @@ export default function UserRole() {
                   />
                 </div>
               )}
-</div>    
-      </div>
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
-  </Card>
-</div>
-
-
   );
-
 }

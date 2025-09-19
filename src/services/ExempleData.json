@@ -1,11 +1,11 @@
 {
   "login": {
-    "code": "200",
-    "message": "Utilisateur authentifié avec succès",
-    "data": {
-      "token": "fake-token-123"
-    }
-  },
+  "code": "200",
+  "message": "Utilisateur authentifié avec succès",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJzY29wZSI6IiIsInVzZXIgIjp7ImlkIjoiNmYyNDkzNmYtMTFjMi00ZjRkLTllNjItMjFjOTJlMWVlYzUyIiwiZmlyc3ROYW1lIjoiQXRzZSBNYXRodXJpbiIsImxhc3ROYW1lIjoiT0xMRUxFIiwibWF0cmljdWxlIjoibTE5NDEiLCJvcmlvblNoZWV0Ijp7ImlkIjoxLCJvcGVyYXRvckNvZGUiOiJDWDEiLCJzZXJ2aWNlIjoiT00iLCJzZXJ2aWNlc01hbmFnZWQiOlsiQ08iXSwibWF0cmljdWxlIjoibTE5NDEiLCJwcm9maWxlIjoiSEFCLU9SR0FOSSJ9LCJyb2xlcyI6W3sicm9sZV9pZCI6NSwibmFtZSI6IkNvbnRyb2xldXIiLCJlZGl0YWJsZSI6ZmFsc2UsInByb2ZpbGVzIjpbeyJpZCI6MSwiY29kZSI6IkFESi1UUkVTTyIsImxpYmVsbGUiOiJBREpPSU5UIENIRUYgREVQVE1UIFRSRVNPUkVSSUUifV19XX0sInN1YiI6Im0xOTQxIiwiaWF0IjoxNzU3NDEwODI1LCJleHAiOjE3NTc0NDY4MjV9.hzI3suG-5LhGV9MGn7Ktil81Y44WuvA83Ce9GGpvBks"
+  }
+},
 
 
   "getCurrentUser":{

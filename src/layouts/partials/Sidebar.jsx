@@ -6,10 +6,8 @@ import { api } from "../../services/api";
 import { 
   FaHome, FaChartLine, FaCog, FaSignOutAlt, 
   FaChevronDown, FaChevronRight, FaTimes,
-  FaUserCog, FaLock,FaPortrait,FaListAlt
+  FaUserCog, FaLock, FaPortrait, FaListAlt
 } from "react-icons/fa";
-import { FaL } from "react-icons/fa6";
-
 
 function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
   const location = useLocation();
@@ -93,72 +91,73 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
       path: "/roles-permissions",
       active: pathname === "/roles-permissions" || pathname.includes("roles-permissions"),
     },
-      {
-      name: "Liste-Profils",
+    {
+      name: "Profils-Orion",
       icon: <FaListAlt className="w-5 h-5" />,
       path: "/tous-profils",
       active: pathname === "/tous-profils" || pathname.includes("tous-profils"),
     },
-
   ];
 
   return (
     <div className="min-w-fit">
       {/* Sidebar backdrop (mobile only) */}
       <div
-        className={`fixed inset-0 bg-gray-900/30 z-40 lg:hidden lg:z-auto transition-opacity duration-200 ${
+        className={`fixed inset-0 bg-gray-900/60 lg:bg-transparent z-40 lg:hidden lg:z-auto transition-opacity duration-200 ${
           sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         aria-hidden="true"
+        onClick={() => setSidebarOpen(false)}
       ></div>
 
       {/* Sidebar */}
       <div
         id="sidebar"
         ref={sidebar}
-        className={`flex flex-col absolute z-40 left-0 top-0 lg:static lg:left-auto lg:top-auto lg:translate-x-0 h-[100dvh] overflow-y-scroll lg:overflow-y-auto no-scrollbar w-64 lg:w-20 lg:sidebar-expanded:!w-64 2xl:!w-64 shrink-0 bg-white dark:bg-gray-800 transition-all duration-200 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-64"
-        } ${variant === 'v2' ? 'border-r border-gray-700' : 'shadow-xl shadow-black/50'}`}
+        className={`flex flex-col fixed lg:relative z-50 left-0 top-0 lg:static lg:left-auto lg:top-auto lg:translate-x-0 h-screen overflow-y-auto no-scrollbar w-64 lg:w-20 xl:w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        } ${variant === 'v2' ? 'border-r border-gray-700' : 'shadow-lg lg:shadow-none'}`}
       >
         {/* Sidebar header */}
-        <div className="flex justify-between items-center bg-green-900 p-3">
+        <div className="flex justify-between items-center bg-green-900 p-4 lg:p-3">
           {/* Logo */}
           <div className="flex items-center">
-            <NavLink end to="/" className="flex items-center">
-              <img src={logo} alt="BNI" className="h-10 w-auto" />
-              <h1 className="ml-3 text-xs text-white font-semibold hidden sm:block hidden:md">
+            <NavLink end to="/" className="flex items-center" onClick={() => setSidebarOpen(false)}>
+              <img src={logo} alt="Logo" className="h-8 w-8 lg:h-6 lg:w-6" />
+              <h1 className="ml-3 text-sm lg:text-xs text-white font-semibold lg:hidden xl:block">
                 {VITE_ENTREPRISE_NAME}
               </h1>
             </NavLink>
           </div>
           
-          {/* Close button */}
+          {/* Close button - visible seulement sur mobile */}
           <button
             ref={trigger}
             className="lg:hidden text-white hover:text-orange-300 p-1 rounded-full transition-colors"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            onClick={() => setSidebarOpen(false)}
             aria-controls="sidebar"
             aria-expanded={sidebarOpen}
           >
-            <FaTimes className="w-5 h-5" />
+            <FaTimes className="w-5 h-5 lg:w-4 lg:h-4" />
+            <span className="sr-only">Fermer le menu</span>
           </button>
         </div>
 
-        <div className="xl:px-4 lg:px-2 md:px-1 sm:px-0 py-2 flex-1 flex flex-col"> 
+        <div className="px-3 py-4 flex-1 flex flex-col"> 
           {/* Sidebar links */}
-          <div className="space-y-2 flex-1">
+          <div className="space-y-1 flex-1">
             {menuItems.map((item, index) => (
               <div key={index}>
                 {item.submenu ? (
                   <SidebarLinkGroup activecondition={item.active}>
                     {(handleClick, open) => {
                       return (
-                        <div className="mb-2">
+                        <div className="mb-1">
                           <button
                             className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 ${
                               item.active
-                                ? "bg-green-900 text-white"
-                                : "text-green-700 bg-white hover:bg-green-800 hover:text-white"
+                                ? "bg-green-800 text-white"
+                                : "text-green-900 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-gray-700 hover:text-green-800 dark:hover:text-white"
                             }`}
                             onClick={(e) => {
                               e.preventDefault();
@@ -166,24 +165,24 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
                             }}
                           >
                             <div className="flex items-center">
-                              <span className={item.active ? "text-white" : "text-green-700"}>
+                              <span className={`${item.active ? "text-white" : "text-gray-600 dark:text-gray-400"} flex-shrink-0`}>
                                 {item.icon}
                               </span>
-                              <span className="text-sm font-medium ml-3 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                              <span className="text-sm font-medium ml-3 lg:hidden xl:block truncate">
                                 {item.name}
                               </span>
                             </div>
-                            <div className="flex shrink-0">
+                            <div className="flex shrink-0 lg:hidden xl:block">
                               {open ? (
-                                <FaChevronDown className={`w-3 h-3 ${item.active ? "text-white" : "text-green-700"}`} />
+                                <FaChevronDown className={`w-3 h-3 ${item.active ? "text-white" : "text-gray-600 dark:text-gray-400"}`} />
                               ) : (
-                                <FaChevronRight className={`w-3 h-3 ${item.active ? "text-white" : "text-green-700"}`} />
+                                <FaChevronRight className={`w-3 h-3 ${item.active ? "text-white" : "text-gray-600 dark:text-gray-400"}`} />
                               )}
                             </div>
                           </button>
                           
                           {open && (
-                            <ul className="mt-1 ml-4 pl-6 border-l-2 border-green-200">
+                            <ul className="mt-1 ml-4 pl-6 border-l-2 border-green-200 dark:border-green-800">
                               {item.submenu.map((subItem, subIndex) => (
                                 <li key={subIndex} className="mb-1 last:mb-0">
                                   <NavLink
@@ -192,10 +191,11 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
                                     className={({ isActive }) =>
                                       `block p-2 text-sm rounded transition-colors duration-150 ${
                                         isActive
-                                          ? "text-green-900 font-medium bg-green-100"
-                                          : "text-green-700 hover:text-green-900 hover:bg-green-50"
+                                          ? "text-green-800 font-medium bg-green-100 dark:bg-green-900/30 dark:text-white"
+                                          : "text-gray-600 dark:text-gray-400 hover:text-green-800 dark:hover:text-white hover:bg-green-50 dark:hover:bg-gray-700"
                                       }`
                                     }
+                                    onClick={() => setSidebarOpen(false)}
                                   >
                                     {subItem.name}
                                   </NavLink>
@@ -212,17 +212,18 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
                     end
                     to={item.path}
                     className={({ isActive }) =>
-                      `flex items-center p-3 rounded-lg transition-all duration-200 mb-2 ${
+                      `flex items-center p-3 rounded-lg transition-all duration-200 mb-1 ${
                         isActive
-                          ? "bg-green-900 text-white"
-                          : "text-green-700 bg-white hover:bg-green-800 hover:text-white"
+                          ? "bg-green-800 text-white"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-gray-700 hover:text-green-800 dark:hover:text-white"
                       }`
                     }
+                    onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
                   >
-                    <span className={item.active ? "text-white" : "text-green-700"}>
+                    <span className={`${item.active ? "text-white" : "text-gray-600 dark:text-gray-400"} flex-shrink-0`}>
                       {item.icon}
                     </span>
-                    <span className="text-sm font-medium ml-3 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                    <span className="text-sm font-medium ml-3 lg:hidden xl:block truncate">
                       {item.name}
                     </span>
                   </NavLink>
@@ -232,35 +233,52 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
           </div>
 
           {/* Additional section for settings and logout */}
-          <div className="mt-auto pt-8">
+          <div className="mt-auto pt-4">
             <NavLink
               to="/monprofil"
               className={({ isActive }) =>
-                `flex items-center p-3 rounded-lg transition-all duration-200 mb-2 ${
+                `flex items-center p-3 rounded-lg transition-all duration-200 mb-1 ${
                   isActive
-                    ? "bg-green-900 text-white"
-                    : "text-green-700 bg-white hover:bg-green-800 hover:text-white"
+                    ? "bg-green-800 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-gray-700 hover:text-green-800 dark:hover:text-white"
                 }`
               }
+              onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
             >
-              <FaPortrait className={pathname === "/monprofil" ? "text-white" : "text-green-700"} />
-              <span className="text-sm font-medium ml-3 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+            
+              <FaPortrait className={`${pathname === "/monprofil" ? "text-white" : "text-gray-600 dark:text-gray-400"} flex-shrink-0`} />
+              <span className="text-sm font-medium ml-3 lg:hidden xl:block">
                 Mon profil
               </span>
             </NavLink>
             
             <button 
-              className="flex items-center w-full p-3 rounded-lg text-green-700 bg-white hover:bg-green-800 hover:text-white transition-all duration-200"
+              className="flex items-center w-full p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-gray-700 hover:text-green-800 dark:hover:text-white transition-all duration-200"
               onClick={handleLogout}
             >
-              <FaSignOutAlt className="text-green-700" />
-              <span className="text-sm font-medium ml-3 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+              <FaSignOutAlt className="text-gray-600 dark:text-gray-400 flex-shrink-0" />
+              <span className="text-sm font-medium ml-3 lg:hidden xl:block">
                 Déconnexion
               </span>
             </button>
           </div>
         </div>
-      </div>
+
+        {/* Expand/Collapse button for desktop */}
+        <div className="hidden lg:flex items-center justify-center p-3 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setSidebarExpanded(!sidebarExpanded)}
+            className="text-gray-600 dark:text-gray-400 hover:text-green-800 dark:hover:text-white transition-colors"
+            aria-label={sidebarExpanded ? "Réduire le menu" : "Développer le menu"}
+          >
+            {sidebarExpanded ? (
+              <FaChevronDown className="w-4 h-4" />
+            ) : (
+              <FaChevronRight className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+      </div>  
     </div>
   );
 }
