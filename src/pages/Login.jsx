@@ -18,13 +18,12 @@ export default function Login() {
     setError("");
 
     const result = await login(email, password);
-    
     if (result.success) {
       navigate("/");
     } else {
+      console.log(result);
       setError(result.message);
     }
-    
     setLoading(false);
   };
 
@@ -57,7 +56,7 @@ export default function Login() {
               {/* Champ Email */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-green-100 mb-2">
-                  Adresse email
+                  Nom d'utilisateur
                 </label>
                 <div className="mt-1">
                   <input

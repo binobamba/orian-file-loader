@@ -74,16 +74,6 @@ const MonProfil = () => {
             >
                 {/* Conteneur avec défilement et en-tête fixe */}
                 <div className="h-[70vh] overflow-y-auto">
-                    {/* En-tête fixe */}
-                    <div className="sticky top-0 bg-white z-10 pt-4 pb-2 border-b">
-                        <h1 className="text-2xl font-bold text-green-900 flex items-center">
-                            <FaUser className="mr-3 text-green-900" />
-                            Mon Profil
-                        </h1>
-                        <p className="text-gray-600 mt-1">Bienvenue sur votre page de profil</p>
-                    </div>
-
-                    {/* Contenu scrollable */}
                     <div className="p-4 space-y-6">
                         {/* Informations personnelles */}
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -162,7 +152,7 @@ const MonProfil = () => {
                                 Services gérés
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                {userData.orionSheet.servicesManaged.map((service, index) => (
+                                {userData.orionSheet.servicesManaged?.map((service, index) => (
                                     <div key={index} className="bg-green-50 text-green-800 px-4 py-3 rounded-lg text-center border border-green-100">
                                         {service}
                                     </div>

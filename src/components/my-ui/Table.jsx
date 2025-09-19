@@ -147,7 +147,7 @@ export const BeautifulTable = ({
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableData colSpan={headers.length} align="center" className="py-8 text-gray-500 dark:text-gray-400">
+                <TableData colSpan={headers.length} align="center" className="py-8 text-gray-500 dark:text-gray-400 w-ful">
                   {emptyMessage}
                 </TableData>
               </TableRow>

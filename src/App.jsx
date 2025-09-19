@@ -41,11 +41,10 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <Navigate to="/demandes" replace />
+                <Navigate to="/dashboard" replace />
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/dashboard"
             element={
@@ -54,6 +53,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           {/* ==================== USERS MANAGEMENT and ROLES ==================== */}
           <Route
             path="/user-role"
@@ -74,7 +74,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
 
            <Route
             path="/roles-permissions"

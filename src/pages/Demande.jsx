@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaEdit, FaPlus, FaSearch, FaTimes, FaRegTrashAlt } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaSearch, FaTimes, FaRegTrashAlt, FaEye } from 'react-icons/fa';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
 import {
@@ -10,6 +10,8 @@ import {
 import { Button } from '../components/my-ui/Button';
 import { Card } from '../components/my-ui/Card';
 import { showValidationModal } from '../components/my-ui/showValidationModal';
+import { showDemandeForm } from '../components/my-ui/showDemandeForm';
+import {showOperationsModalWithPagination} from '../components/my-ui/showOperationsModalWithPagination';
 import { message } from 'antd';
 
 export default function Demande() {
@@ -31,6 +33,7 @@ export default function Demande() {
   const [endDate, setEndDate] = useState('');
 
   const pagination = usePagination(1, 10);
+  const isMounted = useRef(true);
 
   // Configuration des statuts
   const getStatusConfig = (status) => {
@@ -61,6 +64,8 @@ export default function Demande() {
   };
 
   const fetchDemandeData = useCallback(async (page = 1, pageSize = 10, filters = {}) => {
+    if (!isMounted.current) return;
+    
     try {
       setLoading(true);
       const searchData = {
@@ -124,31 +129,62 @@ export default function Demande() {
     });
   };
 
+  const VisualiserDemande = async (demande) => {
+    showOperationsModalWithPagination(demande.operations || []);
+  };
+
   const DeleteDemande = async (demande) => {
     try {
-      await api.cancelIntegrationRequest(demande?.id);
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: 'Demande supprimée avec succès',
-        showConfirmButton: false,
-        timer: 2000
+      const result = await Swal.fire({
+        title: 'Confirmation',
+        text: "Voulez-vous vraiment supprimer cette demande ?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#0d480aff',
+        confirmButtonText: 'Oui, supprimer',
+        cancelButtonText: 'Annuler',
+        showLoaderOnConfirm: true, 
+        allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: async () => {
+          try {
+            await api.cancelIntegrationRequest(demande?.id);
+            fetchDemandeData(pagination.currentPage, pagination.pageSize, {
+              reference: searchReference,
+              operationStatus: searchOperationStatus,
+              createdById: searchCreatedById,
+              startDate: startDate,
+              endDate: endDate
+            });
+
+            return true;
+          } catch (error) {
+            Swal.showValidationMessage(
+              `Erreur lors de la suppression : ${error?.message || "inconnue"}`
+            );
+            return false;
+          }
+        }
       });
-      fetchDemandeData(pagination.currentPage, pagination.pageSize, {
-        reference: searchReference,
-        operationStatus: searchOperationStatus,
-        createdById: searchCreatedById,
-        startDate: startDate,
-        endDate: endDate
-      });
+
+      if (result.isConfirmed) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Demande supprimée avec succès',
+          showConfirmButton: false,
+          timer: 2000
+        });
+      }
+
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       Swal.fire({
         toast: true,
         position: 'top-end',
         icon: 'error',
-        title: 'Erreur lors de la suppression',
+        title: 'Erreur critique lors de la suppression',
         showConfirmButton: false,
         timer: 2000
       });
@@ -176,33 +212,57 @@ export default function Demande() {
     });
   };
 
-  // Fonction de debounce pour la recherche en temps réel
-  const debounce = (func, wait) => {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
+  // Fonction de debounce améliorée
+  const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+      
+      return () => {
+        clearTimeout(handler);
       };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
+    }, [value, delay]);
+    
+    return debouncedValue;
   };
 
-  // Recherche en temps réel avec debounce
-  useEffect(() => {
-    const debouncedFetch = debounce(() => {
-      fetchDemandeData(1, pagination.pageSize, {
-        reference: searchReference,
-        operationStatus: searchOperationStatus,
-        createdById: searchCreatedById,
-        startDate: startDate,
-        endDate: endDate
-      });
-    }, 500);
+  // Utilisation du debounce pour les champs de recherche
+  const debouncedSearchReference = useDebounce(searchReference, 500);
+  const debouncedSearchOperationStatus = useDebounce(searchOperationStatus, 500);
+  const debouncedSearchCreatedById = useDebounce(searchCreatedById, 500);
+  const debouncedStartDate = useDebounce(startDate, 500);
+  const debouncedEndDate = useDebounce(endDate, 500);
 
-    debouncedFetch();
-  }, [searchReference, searchOperationStatus, searchCreatedById, startDate, endDate, fetchDemandeData, pagination.pageSize]);
+  // Effet principal pour la recherche
+  useEffect(() => {
+    if (isMounted.current) {
+      fetchDemandeData(1, pagination.pageSize, {
+        reference: debouncedSearchReference,
+        operationStatus: debouncedSearchOperationStatus,
+        createdById: debouncedSearchCreatedById,
+        startDate: debouncedStartDate,
+        endDate: debouncedEndDate
+      });
+    }
+  }, [
+    debouncedSearchReference,
+    debouncedSearchOperationStatus,
+    debouncedSearchCreatedById,
+    debouncedStartDate,
+    debouncedEndDate,
+    pagination.pageSize,
+    fetchDemandeData
+  ]);
+
+  // Nettoyage du composant
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const hasActiveFilters = searchReference || searchOperationStatus || searchCreatedById || startDate || endDate;
 
@@ -211,132 +271,137 @@ export default function Demande() {
       <Card
         title="GESTION DES DEMANDES"
         buttonText="Nouvelle demande"
-        onButtonClick={() => navigate('/nouvelle-demande')}
+        addBouton={true}
+        onClickAddButton={showDemandeForm}
         icon={<FaPlus className="inline mr-1" />}
       >
         {/* Conteneur avec défilement et en-tête fixe */}
-        <div className="h-[70vh] overflow-y-auto">
+        <div className="h-[80vh] overflow-y-auto">
           
           {/* En-tête fixe */}
           <div className="sticky top-0 bg-white z-10 pt-4 pb-2 border-b shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-              
-              {/* Champ référence */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="reference"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Référence
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaSearch className="text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    id="reference"
-                    placeholder="Référence"
-                    value={searchReference}
-                    onChange={(e) => setSearchReference(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
-                              bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                              focus:ring-green-800 focus:border-green-800 
-                              dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
+         <div className="relative">
+        <div className="overflow-x-auto md:overflow-visible">
+      <div className="grid grid-cols-5 md:grid-cols-5 gap-4 items-end min-w-[900px] md:min-w-0">
+      
+      {/* Champ référence */}
+      <div className="flex flex-col">
+        <label
+          htmlFor="reference"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Référence
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FaSearch className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            id="reference"
+            placeholder="Référence"
+            value={searchReference}
+            onChange={(e) => setSearchReference(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
+                      bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
+                      focus:ring-green-800 focus:border-green-800 
+                      dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+      </div>
 
-              {/* Champ statut opération */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="operationStatus"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Statut Opération
-                </label>
-                <select
-                  id="operationStatus"
-                  value={searchOperationStatus}
-                  onChange={(e) => setSearchOperationStatus(e.target.value)}
-                  className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md 
-                            bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                            focus:ring-green-800 focus:border-green-800 
-                            dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                >
-                  <option value="">TOUS LES STATUTS</option>
-                  <option value="VALIDEE">VALIDEE</option>
-                  <option value="NON_VALIDEE">NON VALIDE</option>
-                  <option value="EN_TRAITEMENT">EN TRAITEMENT</option>
-                </select>
-              </div>
+      {/* Champ statut opération */}
+      <div className="flex flex-col">
+        <label
+          htmlFor="operationStatus"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Statut Opération
+        </label>
+        <select
+          id="operationStatus"
+          value={searchOperationStatus}
+          onChange={(e) => setSearchOperationStatus(e.target.value)}
+          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md 
+                    bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
+                    focus:ring-green-800 focus:border-green-800 
+                    dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        >
+          <option value="">TOUS LES STATUTS</option>
+          <option value="VALIDEE">VALIDEE</option>
+          <option value="NON_VALIDEE">NON VALIDE</option>
+          <option value="EN_TRAITEMENT">EN TRAITEMENT</option>
+        </select>
+      </div>
 
-              {/* Champ ID créateur */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="createdById"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  DEMANDEUR
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaSearch className="text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    id="createdById"
-                    placeholder="ID du demandeur"
-                    value={searchCreatedById}
-                    onChange={(e) => setSearchCreatedById(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
-                              bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                              focus:ring-green-800 focus:border-green-800 
-                              dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
+      {/* Champ ID créateur */}
+      <div className="flex flex-col">
+        <label
+          htmlFor="createdById"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          DEMANDEUR
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FaSearch className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            id="createdById"
+            placeholder="ID du demandeur"
+            value={searchCreatedById}
+            onChange={(e) => setSearchCreatedById(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
+                      bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
+                      focus:ring-green-800 focus:border-green-800 
+                      dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+      </div>
 
-              {/* Champ date de début */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="startDate"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Date de début
-                </label>
-                <input
-                  type="date"
-                  id="startDate"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md 
-                            bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                            focus:ring-green-800 focus:border-green-800 
-                            dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
+      {/* Champ date de début */}
+      <div className="flex flex-col">
+        <label
+          htmlFor="startDate"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Date de début
+        </label>
+        <input
+          type="date"
+          id="startDate"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md 
+                    bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
+                    focus:ring-green-800 focus:border-green-800 
+                    dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        />
+      </div>
 
-              {/* Champ date de fin */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="endDate"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Date de fin
-                </label>
-                <input
-                  type="date"
-                  id="endDate"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md 
-                            bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                            focus:ring-green-800 focus:border-green-800 
-                            dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
+            {/* Champ date de fin */}
+            <div className="flex flex-col">
+              <label
+                htmlFor="endDate"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Date de fin
+              </label>
+              <input
+                type="date"
+                id="endDate"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md 
+                          bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
+                          focus:ring-green-800 focus:border-green-800 
+                          dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
             </div>
+          </div>
+        </div>
+      </div>
 
             {/* Bouton Effacer */}
             <div className="flex gap-2 pt-3">
@@ -461,7 +526,7 @@ export default function Demande() {
                               className="text-xs px-2 py-1 whitespace-nowrap"
                               title="Valider"
                             >
-                              <FaEdit className="inline h-4 w-4" /> VALIDER
+                              <FaEdit className="inline h-4 w-4" /> 
                             </Button>
 
                             <Button 
@@ -473,6 +538,17 @@ export default function Demande() {
                             >
                               <FaRegTrashAlt className="inline h-4 w-4" />
                             </Button>
+
+                             <Button 
+                              onClick={() => VisualiserDemande(record)}
+                              size="sm"
+                              variant="outline"
+                              className="text-xs px-2 py-1"
+                              title="Télécharger"
+                            >
+                              <FaEye className="inline h-4 w-4" />
+                            </Button>
+
                           </div>
                         </td>
                       </tr>

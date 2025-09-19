@@ -47,8 +47,18 @@ const showModalRoleToUser = (user, allRoles, onSuccessCallback = null) => {
   };
 
   const generateAssignedRolesHTML = () => {
-    const assignedRoles = allRoles.filter(role => selectedRoles.includes(role.role_id || role.id));
-    const filteredRoles = getFilteredRoles(assignedRoles, assignedSearchTerm);
+    
+    console.log('allRoles:', allRoles);
+    const assignedRoles = allRoles.filter(role => selectedRoles.includes(role.role_id));
+    console.log('assignedRoles:', assignedRoles);
+    const uniqueAssignedRoles = assignedRoles.filter(
+      (role, index, self) =>
+        index === self.findIndex(r => r.role_id === role.role_id)
+    );
+
+    console.log('uniqueAssignedRoles:', uniqueAssignedRoles);
+
+    const filteredRoles = getFilteredRoles(uniqueAssignedRoles, assignedSearchTerm);
     const paginatedRoles = getPaginatedRoles(filteredRoles, currentAssignedPage);
     const totalPages = getTotalPages(filteredRoles);
     
