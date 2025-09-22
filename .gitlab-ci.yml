@@ -1,0 +1,181 @@
+default:
+  tags:
+    - docker
+
+stages:
+  - build
+  - deploy
+
+variables:
+  GIT_SSL_NO_VERIFY: "true"
+  NODE_VERSION: "18"  # React recommande Node.js 18+
+
+build:
+  stage: build
+  image: node:${NODE_VERSION}
+  before_script:
+    # Installation des outils de compilation nécessaires
+    - apt-get update && apt-get install -y python3 make g++ build-essential
+    # Installation propre sans cache pour forcer la recompilation
+    - rm -rf node_modules package-lock.json .npm
+    - npm install
+  script:
+    - echo "Building React application..."
+    - npm run build
+    
+    # Vérification du build
+    - echo "Build output:"
+    - ls -la build/ || ls -la dist/
+    - echo "Build completed successfully!"
+
+  artifacts:
+    paths:
+      - build/  # React utilise généralement 'build/' au lieu de 'dist/'
+      - dist/   # Ou 'dist/' selon la config
+    expire_in: 1 hour
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+      - node_modules/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - when: on_success
+
+# Déploiement STAGING (develop)
+deploy_staging:
+  stage: deploy
+  image: alpine:latest
+  environment:
+    name: staging
+  variables:
+    REMOTE_HOST: "10.200.8.7"  # Serveur de staging
+    APP_NAME: "orion-file-loader"
+    DEPLOY_PATH: "/srv/www/sites/orion-file-loader"
+    BACKUP_PATH: "/srv/nginx/backup"
+  before_script:
+    - apk update && apk add --no-cache openssh
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo "Ready to deploy React app to staging..."
+  script:
+    # Create backup of current deployment
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo mkdir -p $BACKUP_PATH && sudo cp -r $DEPLOY_PATH $BACKUP_PATH/orion-file-loader-\$(date +%Y%m%d_%H%M%S) 2>/dev/null || true"
+    
+    # Create application directory if it doesn't exist
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "mkdir -p $DEPLOY_PATH"
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "mkdir -p /home/deploy/react-staging && sudo chown $SSH_USER_DEPLOY:$SSH_USER_DEPLOY /home/deploy/react-staging"
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo rm -rf /home/deploy/react-staging/*"
+    
+    # Debug - Vérifier le contenu du build
+    - echo "Contenu du dossier build"
+    - ls -la build/ 2>/dev/null || ls -la dist/ 2>/dev/null || echo "No build folder found"
+    
+    # Déploiement des fichiers React (essaie build/ puis dist/)
+    - echo "Déploiement des fichiers React..."
+    - |
+      if [ -d "build" ]; then
+        echo "Using build/ directory"
+        scp -r -o StrictHostKeyChecking=no build/* "$SSH_USER_DEPLOY@$REMOTE_HOST:/home/deploy/react-staging/"
+      elif [ -d "dist" ]; then
+        echo "Using dist/ directory"
+        scp -r -o StrictHostKeyChecking=no dist/* "$SSH_USER_DEPLOY@$REMOTE_HOST:/home/deploy/react-staging/"
+      else
+        echo "Error: No build or dist directory found"
+        exit 1
+      fi
+    
+    # Déplacement vers la destination finale
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo rm -rf $DEPLOY_PATH/* && sudo cp -r /home/deploy/react-staging/* $DEPLOY_PATH/ && sudo chown -R nginx:nginx $DEPLOY_PATH/"
+    
+    # Nettoyage
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo rm -rf /home/deploy/react-staging/*"
+    
+    - echo "=== Déploiement React staging terminé ==="
+    
+    # Reload nginx configuration
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo nginx -t && sudo systemctl reload nginx"
+    
+    # Verify deployment
+    - sleep 5
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo systemctl status nginx"
+    - echo "✅ React app deployed to staging successfully!"
+   
+    
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+
+# Déploiement PRODUCTION (main)
+deploy_production:
+  stage: deploy
+  image: alpine:latest
+  environment:
+    name: production
+  variables:
+    REMOTE_HOST: "10.201.8.9"  # Serveur de production
+    APP_NAME: "orion-file-loader"
+    DEPLOY_PATH: "/srv/www/sites/orion-file-loader"
+    BACKUP_PATH: "/srv/nginx/backup"
+  before_script:
+    - apk update && apk add --no-cache openssh
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo "Ready to deploy React app to production..."
+  script:
+    # Create backup of current deployment
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo mkdir -p $BACKUP_PATH && sudo cp -r $DEPLOY_PATH $BACKUP_PATH/orion-file-loader-\$(date +%Y%m%d_%H%M%S) 2>/dev/null || true"
+    
+    # Create application directory if it doesn't exist
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "mkdir -p $DEPLOY_PATH"
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "mkdir -p /home/deploy/react-prod && sudo chown $SSH_USER_DEPLOY:$SSH_USER_DEPLOY /home/deploy/react-prod"
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo rm -rf /home/deploy/react-prod/*"
+    
+    # Debug - Vérifier le contenu du build
+    - echo "Contenu du dossier build/dist"
+    - ls -la build/ 2>/dev/null || ls -la dist/ 2>/dev/null || echo "No build folder found"
+    
+    # Déploiement des fichiers React (essaie build/ puis dist/)
+    - echo "Déploiement des fichiers React en production..."
+    - |
+      if [ -d "build" ]; then
+        echo "Using build/ directory"
+        scp -r -o StrictHostKeyChecking=no build/* "$SSH_USER_DEPLOY@$REMOTE_HOST:/home/deploy/react-prod/"
+      elif [ -d "dist" ]; then
+        echo "Using dist/ directory"
+        scp -r -o StrictHostKeyChecking=no dist/* "$SSH_USER_DEPLOY@$REMOTE_HOST:/home/deploy/react-prod/"
+      else
+        echo "Error: No build or dist directory found"
+        exit 1
+      fi
+    
+    # Déplacement vers la destination finale
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo rm -rf $DEPLOY_PATH/* && sudo cp -r /home/deploy/react-prod/* $DEPLOY_PATH/ && sudo chown -R nginx:nginx $DEPLOY_PATH/"
+    
+    # Nettoyage
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo rm -rf /home/deploy/react-prod/*"
+    
+    - echo "=== Déploiement React production terminé ==="
+    
+    # Reload nginx configuration
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo nginx -t && sudo systemctl reload nginx"
+    
+    # Verify deployment
+    - sleep 5
+    - ssh -o StrictHostKeyChecking=no $SSH_USER_DEPLOY@$REMOTE_HOST "sudo systemctl status nginx"
+    - echo "🚀 React app deployed to production successfully!"
+    
+    
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: false
