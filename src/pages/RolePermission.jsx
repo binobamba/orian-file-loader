@@ -59,7 +59,7 @@ function RolePermission() {
       }
     } catch (error) {
       console.error("Erreur lors du chargement des rôles:", error);
-      Swal.fire('Erreur', 'Impossible de charger les rôles', 'error');
+      // Swal.fire('Erreur', 'Impossible de charger les rôles', 'error');
       setRolesData({
         content: [],
         totalPages: 0,
