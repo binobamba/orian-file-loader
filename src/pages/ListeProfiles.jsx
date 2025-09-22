@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
@@ -16,27 +16,18 @@ function ListeProfiles() {
     number: 0,
     size: 10
   });
+
   const [loading, setLoading] = useState(false);
   const [searchLibelle, setSearchLibelle] = useState('');
   const pagination = usePagination(1, 10);
-
-  // Fonction de recherche avec debounce améliorée
-  const debounce = (func, wait) => {
-    let timeout;
-    const executedFunction = (...args) => {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-    
-    executedFunction.cancel = () => clearTimeout(timeout);
-    return executedFunction;
-  };
+  
+  // Références pour le debounce et le suivi des requêtes
+  const timeoutRef = useRef(null);
+  const isMounted = useRef(true);
 
   const fetchData = async (code = '', page = 1, size = 10) => {
+    if (!isMounted.current) return;
+    
     setLoading(true);
     try {
       const response = await api.getProfile({
@@ -44,45 +35,56 @@ function ListeProfiles() {
         page_: page - 1, 
         size_: size
       });
-      setProfilesData(response);
+      if (isMounted.current) {
+        setProfilesData(response);
+      }
     } catch (error) {
-      console.error("Erreur lors du chargement des profils:", error);
-      Swal.fire('Erreur', 'Impossible de charger les profils', 'error');
+      if (isMounted.current) {
+        console.error("Erreur lors du chargement des profils:", error);
+        Swal.fire('Erreur', 'Impossible de charger les profils', 'error');
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   };
 
   const handleClearSearch = () => {
     setSearchLibelle('');
     pagination.goToPage(1);
-    fetchData('', 1, pagination.pageSize);
   };
 
   const handlePageChange = (page) => {
     pagination.goToPage(page);
-    fetchData(searchLibelle, page, pagination.pageSize);
   };
 
-  // Mémoïzation de la fonction fetchData pour éviter les recréations inutiles
-  const memoizedFetchData = useCallback(fetchData, []);
-
-  // Recherche en temps réel avec debounce
+  // SEUL useEffect qui gère tout
   useEffect(() => {
-    const debouncedFetch = debounce(() => {
-      memoizedFetchData(searchLibelle, pagination.currentPage, pagination.pageSize);
-    }, 500);
-
-    debouncedFetch();
+    isMounted.current = true;
     
-    // Nettoyage du debounce
-    return () => debouncedFetch.cancel();
-  }, [searchLibelle, pagination.pageSize, pagination.currentPage, memoizedFetchData]);
+    // Fonction de debounce
+    const debouncedFetch = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      timeoutRef.current = setTimeout(() => {
+        fetchData(searchLibelle, pagination.currentPage, pagination.pageSize);
+      }, 500);
+    };
 
-  // Charger les données initiales
-  useEffect(() => {
-    memoizedFetchData(searchLibelle, pagination.currentPage, pagination.pageSize);
-  }, [memoizedFetchData, pagination.currentPage, pagination.pageSize]);
+    // Exécuter la requête
+    debouncedFetch();
+
+    // Nettoyage
+    return () => {
+      isMounted.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [searchLibelle, pagination.currentPage, pagination.pageSize]);
 
   const hasActiveFilters = searchLibelle;
 
@@ -101,16 +103,16 @@ function ListeProfiles() {
               
               {/* Champ recherche Libellé du profil */}
               <div className="md:col-span-3 flex flex-col">
-                <label
+                {/* <label
                   htmlFor="profileLibelle"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
-                  Libellé du profil
-                </label>
+
+                </label> */}
 
                 <div className="flex gap-2 items-center">
                   {/* Champ de recherche réduit */}
-                  <div className="relative w-48">
+                  <div className="relative ">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg
                         className="h-5 w-5 text-gray-400"
