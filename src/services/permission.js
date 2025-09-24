@@ -1,41 +1,71 @@
-/**
- * Permission service for managing user permissions.
- */
+import { api } from "./api";
 
-class PermissionService {
-    constructor() {
-        this.permissions = new Map();
+// Cache pour les permissions
+let userPermissionsCache = null;
+
+// Fonction asynchrone pour récupérer les données utilisateur
+async function getUserData() {
+    if (userPermissionsCache) {
+        return userPermissionsCache;
     }
-
-    /**
-     * Set permissions for a user.
-     * @param {string} userId
-     * @param {Array<string>} permissions
-     */
-    setPermissions(userId, permissions) {
-        this.permissions.set(userId, new Set(permissions));
-    }
-
-    /**
-     * Check if a user has a specific permission.
-     * @param {string} userId
-     * @param {string} permission
-     * @returns {boolean}
-     */
-    hasPermission(userId, permission) {
-        const userPermissions = this.permissions.get(userId);
-        return userPermissions ? userPermissions.has(permission) : false;
-    }
-
-    /**
-     * Get all permissions for a user.
-     * @param {string} userId
-     * @returns {Array<string>}
-     */
-    getPermissions(userId) {
-        const userPermissions = this.permissions.get(userId);
-        return userPermissions ? Array.from(userPermissions) : [];
+    
+    try {
+        const userData = await api.getCurrentUser();
+        userPermissionsCache = userData;
+        return userData;
+    } catch (error) {
+        console.error('Error getting user data:', error);
+        return null;
     }
 }
 
-module.exports = new PermissionService();
+export async function isAdmin() {
+    const userData = await getUserData();
+    
+    if (!userData || !userData.roles) {
+        return false;
+    }
+
+    // Vérifier si l'utilisateur a le rôle administrateur
+    return userData.roles.some(role => {
+        const roleName = role.name?.toLowerCase() || '';
+        return roleName.includes('admin') || 
+               roleName.includes('administrateur') ||
+               roleName === 'super admin';
+    });
+}
+
+export async function canAccessModule(moduleName) {
+    console.log(`=== Checking access for module: ${moduleName} ===`);
+    
+    // Si l'utilisateur est admin, il a accès à tout
+    if (await isAdmin()) {
+        console.log('User is admin - granting access to everything');
+        return true;
+    }
+
+    // Pour les non-administrateurs : uniquement dashboard et demandes
+    const allowedModulesForNonAdmin = ['dashboard', 'demandes'];
+    
+    const hasAccess = allowedModulesForNonAdmin.includes(moduleName);
+    console.log(`Non-admin access to ${moduleName}:`, hasAccess);
+    
+    return hasAccess;
+}
+
+export function clearPermissionCache() {
+    userPermissionsCache = null;
+}
+
+// Fonctions utilitaires pour afficher les infos utilisateur
+export async function getUserInfo() {
+    const userData = await getUserData();
+    return {
+        firstName: userData?.firstName,
+        lastName: userData?.lastName,
+        email: userData?.email,
+        matricule: userData?.matricule,
+        roles: userData?.roles?.map(role => role.name) || [],
+        isAdmin: await isAdmin()
+    };
+}

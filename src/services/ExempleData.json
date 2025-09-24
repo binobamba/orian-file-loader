@@ -31,7 +31,7 @@
                     "roles": [
                         {
                             "role_id": 1,
-                            "name": "Administrateur",
+                            "name": "super admin",
                             "editable": true,
                             "profiles": [
                                 {
@@ -69,7 +69,7 @@
   "list_demande":{
       "content": [
         {
-          "id": "55ce3094-b7ef-4582-9681-179fba72d054",
+          "id": "55ce3094-b7ef-4582-9681",
           "reference": "OP-20250905154406-CF565DE1",
           "debitAmount": 6474383574,
           "creditAmount": 6474383574,
@@ -109,7 +109,7 @@
           },
           "validatedBy": null
         },  {
-          "id": "55ce3094-b7ef-4582-9681-179fba72d054",
+          "id": "55ce3094-b7ef-4582-9681-179f",
           "reference": "OP-20250905154406-CF565DE1",
           "debitAmount": 6474383574,
           "creditAmount": 6474383574,
@@ -149,7 +149,7 @@
           },
           "validatedBy": null
         },  {
-          "id": "55ce3094-b7ef-4582-9681-179fba72d054",
+          "id": "55ce3094-b7ef-4582-9681-17ba72d054",
           "reference": "OP-20250905154406-CF565DE1",
           "debitAmount": 6474383574,
           "creditAmount": 6474383574,
@@ -189,7 +189,7 @@
           },
           "validatedBy": null
         },  {
-          "id": "55ce3094-b7ef-4582-9681-179fba72d054",
+          "id": "553094-b7ef-4582-9681-179fba72d054",
           "reference": "OP-20250905154406-CF565DE1",
           "debitAmount": 6474383574,
           "creditAmount": 6474383574,
@@ -229,7 +229,7 @@
           },
           "validatedBy": null
         },  {
-          "id": "55ce3094-b7ef-4582-9681-179fba72d054",
+          "id": "55ce34-b7ef-4582-9681-179fba72d054",
           "reference": "OP-20250905154406-CF565DE1",
           "debitAmount": 6474383574,
           "creditAmount": 6474383574,
@@ -269,7 +269,7 @@
           },
           "validatedBy": null
         },  {
-          "id": "55ce3094-b7ef-4582-9681-179fba72d054",
+          "id": "e3094-b7ef-4582-9681-179fba72d054",
           "reference": "OP-20250905154406-CF565DE1",
           "debitAmount": 6474383574,
           "creditAmount": 6474383574,
@@ -309,7 +309,7 @@
           },
           "validatedBy": null
         },  {
-          "id": "55ce3094-b7ef-4582-9681-179fba72d054",
+          "id": "55ce3094-b7ef-ef582-9681-179fba72d054",
           "reference": "OP-20250905154406-CF565DE1",
           "debitAmount": 6474383574,
           "creditAmount": 6474383574,
@@ -349,7 +349,416 @@
           },
           "validatedBy": null
         },  {
+          "id": "55ce3094-b7ef-4585-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },
+          {
           "id": "55ce3094-b7ef-4582-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },
+          {
+          "id": "55ce3094-ef9eff52-4582-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },
+          {
+          "id": "55ce3094-b7efe56ef-4582-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },
+          {
+          "id": "55ce3094-b7ef-4582-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },
+        {
+          "id": "55ce30OPIb7ef-4582-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },
+          {
+          "id": "55ce3094-bEFef-4582-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },
+        {
+          "id": "55ce3094fzef-b7ef-4582-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },
+          {
+          "id": "55ce3zef986094-b7ef-4582-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },{
+          "id": "55ce309sf604-b7ef-4582-9681-179fba72d054",
+          "reference": "OP-20250905154406-CF565DE1",
+          "debitAmount": 6474383574,
+          "creditAmount": 6474383574,
+          "integrationStatus": "EN_TRAITEMENT",
+          "operationStatus": "NON_VALIDEE",
+          "createdAt": "2025-09-05T15:44:06.701351",
+          "validatedAt": null,
+          "createdBy": {
+            "id": "6f24936f-11c2-4f4d-9e62-21c92e1eec52",
+            "firstName": "Atse Mathurin",
+            "lastName": "OAU",
+            "matricule": "m841",
+            "orionSheet": {
+              "id": 1,
+              "operatorCode": "CX1",
+              "service": "OM",
+              "servicesManaged": [
+                "CO"
+              ],
+              "matricule": "m841",
+              "profile": "HAB-ORGANI"
+            },
+            "roles": [
+              {
+                "role_id": 5,
+                "name": "Controleur",
+                "editable": false,
+                "profiles": [
+                  {
+                    "id": 1,
+                    "code": "ADJ-TRESO",
+                    "libelle": "ADJOINT CHEF DEPTMT TRESORERIE"
+                  }
+                ]
+              }
+            ]
+          },
+          "validatedBy": null
+        },
+          {
+          "id": "55ce3094-bzef57ef-4582-9681-179fba72d054",
           "reference": "OP-20250905154406-CF565DE1",
           "debitAmount": 6474383574,
           "creditAmount": 6474383574,
@@ -405,7 +814,7 @@
       },
       "last": true,
       "totalPages": 4,
-      "totalElements": 9,
+      "totalElements": 8,
       "size": 10,
       "number": 0,
       "sort": {
@@ -432,6 +841,7 @@
         "data": "string"
     },
 
+    
     "users":{
       "totalPages": 2,
       "totalElements": 15,

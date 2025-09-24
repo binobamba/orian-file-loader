@@ -1,15 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import SidebarLinkGroup from "./SidebarLinkGroup";
 import logo from "../../assets/images/favicon.png";
 import { api } from "../../services/api";
-import { 
-  FaHome, FaChartLine, FaCog, FaSignOutAlt, 
-  FaChevronDown, FaChevronRight, FaTimes,
-  FaUserCog, FaLock, FaPortrait, FaListAlt
+import { canAccessModule, getUserInfo } from "../../services/permission";
+import {
+  FaHome,
+  FaChartLine,
+  FaSignOutAlt,
+  FaTimes,
+  FaUserCog,
+  FaLock,
+  FaPortrait,
+  FaListAlt,
+  FaUserTie,
+  FaChevronRight,
+  FaChevronLeft
 } from "react-icons/fa";
 
-function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
+function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const location = useLocation();
   const { pathname } = location;
   const { VITE_ENTREPRISE_NAME } = import.meta.env;
@@ -17,25 +25,77 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
 
   const trigger = useRef(null);
   const sidebar = useRef(null);
+  const [userInfo, setUserInfo] = useState(null);
+  const [menuItems, setMenuItems] = useState([]);
 
   const storedSidebarExpanded = localStorage.getItem("sidebar-expanded");
   const [sidebarExpanded, setSidebarExpanded] = useState(
     storedSidebarExpanded === null ? false : storedSidebarExpanded === "true"
   );
 
-  // Fonction de déconnexion
-  const handleLogout = async () => {
-    try {
-      await api.logout();
-      // Rediriger vers la page de connexion après déconnexion
-      navigate("/login");
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
-      // Gérer les erreurs éventuelles
-    }
-  };
+  // Charger les infos utilisateur et filtrer le menu
+  useEffect(() => {
+    const loadUserAndMenu = async () => {
+      const info = await getUserInfo();
+      setUserInfo(info);
+      
+      // Tous les items du menu
+      const allMenuItems = [
+        {
+          name: "Dashboard",
+          icon: <FaHome className="w-5 h-5 flex-shrink-0" />,
+          path: "/dashboard",
+          module: "dashboard"
+        },
+        {
+          name: "Demandes",
+          icon: <FaChartLine className="w-5 h-5 flex-shrink-0" />,
+          path: "/demandes",
+          module: "demandes"
+        },
+        {
+          name: "Gestion utilisateurs",
+          icon: <FaUserCog className="w-5 h-5 flex-shrink-0" />,
+          path: "/user-role",
+          module: "gestion_utilisateurs",
+          adminOnly: true
+        },
+        {
+          name: "Roles & Permissions",
+          icon: <FaLock className="w-5 h-5 flex-shrink-0" />,
+          path: "/roles-permissions",
+          module: "roles_permissions",
+          adminOnly: true
+        },
+        {
+          name: "Profils-Orion",
+          icon: <FaListAlt className="w-5 h-5 flex-shrink-0" />,
+          path: "/tous-profils",
+          module: "profils_orion",
+          adminOnly: true
+        },
+      ];
 
-  // close on click outside
+      // Filtrer selon les permissions
+      const filteredItems = [];
+      for (const item of allMenuItems) {
+        if (item.adminOnly && !info.isAdmin) {
+          continue;
+        }
+        
+        const hasAccess = await canAccessModule(item.module);
+        if (hasAccess) {
+          filteredItems.push(item);
+        }
+      }
+      
+      setMenuItems(filteredItems);
+    };
+
+    loadUserAndMenu();
+  }, []);
+
+  // Fermer le sidebar en cliquant à l'extérieur (mobile)
   useEffect(() => {
     const clickHandler = ({ target }) => {
       if (!sidebar.current || !trigger.current) return;
@@ -46,7 +106,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
     return () => document.removeEventListener("click", clickHandler);
   });
 
-  // close if the esc key is pressed
+  // Fermer avec la touche Échap (mobile)
   useEffect(() => {
     const keyHandler = ({ key }) => {
       if (!sidebarOpen || key !== "Escape") return;
@@ -56,6 +116,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
     return () => document.removeEventListener("keydown", keyHandler);
   });
 
+  // Sauvegarder l'état du sidebar
   useEffect(() => {
     localStorage.setItem("sidebar-expanded", sidebarExpanded);
     if (sidebarExpanded) {
@@ -65,221 +126,174 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = 'default' }) {
     }
   }, [sidebarExpanded]);
 
-  // Menu items data
-  const menuItems = [
-    {
-      name: "Dashboard",
-      icon: <FaHome className="w-5 h-5" />,
-      path: "/dashboard",
-      active: pathname === "/dashboard" || pathname.includes("dashboard"),
-    },
-    {
-      name: "Demandes",
-      icon: <FaChartLine className="w-5 h-5" />,
-      path: "/demandes",
-      active: pathname === "/demandes" || pathname.includes("demandes"),
-    },
-    {
-      name: "Gestion des utilisateurs",
-      icon: <FaUserCog className="w-5 h-5" />,
-      path: "/user-role",
-      active: pathname === "/user-role" || pathname.includes("user-role"),
-    },
-    {
-      name: "Roles & Permissions",
-      icon: <FaLock className="w-5 h-5" />,
-      path: "/roles-permissions",
-      active: pathname === "/roles-permissions" || pathname.includes("roles-permissions"),
-    },
-    {
-      name: "Profils-Orion",
-      icon: <FaListAlt className="w-5 h-5" />,
-      path: "/tous-profils",
-      active: pathname === "/tous-profils" || pathname.includes("tous-profils"),
-    },
-  ];
+  const isActive = (path) => pathname === path || pathname.includes(path);
+
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+    }
+  };
 
   return (
-    <div className="min-w-fit">
-      {/* Sidebar backdrop (mobile only) */}
+    <>
+      {/* Overlay pour mobile */}
       <div
-        className={`fixed inset-0 bg-gray-900/60 lg:bg-transparent z-40 lg:hidden lg:z-auto transition-opacity duration-200 ${
+        className={`fixed inset-0 bg-black/20 z-40 lg:hidden transition-opacity duration-300 ${
           sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
-        aria-hidden="true"
         onClick={() => setSidebarOpen(false)}
-      ></div>
+      />
 
       {/* Sidebar */}
       <div
-        id="sidebar"
         ref={sidebar}
-        className={`flex flex-col fixed lg:relative z-50 left-0 top-0 lg:static lg:left-auto lg:top-auto lg:translate-x-0 h-screen overflow-y-auto no-scrollbar w-64 lg:w-20 xl:w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out ${
+        className={`flex flex-col fixed lg:sticky top-0 z-50 lg:z-auto h-screen overflow-y-auto no-scrollbar w-64 lg:w-[70px] xl:w-64 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } ${variant === 'v2' ? 'border-r border-gray-700' : 'shadow-lg lg:shadow-none'}`}
+        } ${
+          sidebarExpanded ? "lg:w-64" : "lg:w-[70px]"
+        }`}
+        style={{ 
+          height: '100vh',
+          top: 0,
+          left: 0
+        }}
       >
-        {/* Sidebar header */}
-        <div className="flex justify-between items-center bg-green-900 p-4 lg:p-3">
-          {/* Logo */}
-          <div className="flex items-center">
-            <NavLink end to="/" className="flex items-center" onClick={() => setSidebarOpen(false)}>
-              <img src={logo} alt="Logo" className="h-8 w-8 lg:h-6 lg:w-6" />
-              <h1 className="ml-3 text-sm lg:text-xs text-white font-semibold lg:hidden xl:block">
+        {/* Header du sidebar */}
+        <div className="flex justify-between items-center bg-green-900 p-4 min-h-[64px]">
+          <div className="flex items-center min-w-0">
+            <NavLink 
+              end to="/" 
+              className="flex items-center min-w-0"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <img src={logo} alt="Logo" className="h-8 w-8 flex-shrink-0" />
+              <h1 className={`ml-3 text-sm text-white font-semibold truncate transition-all duration-300 ${
+                sidebarExpanded ? "opacity-100" : "lg:opacity-0 xl:opacity-100"
+              }`}>
                 {VITE_ENTREPRISE_NAME}
               </h1>
             </NavLink>
           </div>
           
-          {/* Close button - visible seulement sur mobile */}
+          {/* Bouton fermer (mobile) */}
           <button
             ref={trigger}
-            className="lg:hidden text-white hover:text-orange-300 p-1 rounded-full transition-colors"
+            className="lg:hidden text-white hover:text-orange-200 p-1 rounded transition-colors"
             onClick={() => setSidebarOpen(false)}
-            aria-controls="sidebar"
-            aria-expanded={sidebarOpen}
           >
-            <FaTimes className="w-5 h-5 lg:w-4 lg:h-4" />
-            <span className="sr-only">Fermer le menu</span>
+            <FaTimes className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="px-3 py-4 flex-1 flex flex-col"> 
-          {/* Sidebar links */}
-          <div className="space-y-1 flex-1">
-            {menuItems.map((item, index) => (
-              <div key={index}>
-                {item.submenu ? (
-                  <SidebarLinkGroup activecondition={item.active}>
-                    {(handleClick, open) => {
-                      return (
-                        <div className="mb-1">
-                          <button
-                            className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 ${
-                              item.active
-                                ? "bg-green-800 text-white"
-                                : "text-green-900 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-gray-700 hover:text-green-800 dark:hover:text-white"
-                            }`}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleClick();
-                            }}
-                          >
-                            <div className="flex items-center">
-                              <span className={`${item.active ? "text-white" : "text-gray-600 dark:text-gray-400"} flex-shrink-0`}>
-                                {item.icon}
-                              </span>
-                              <span className="text-sm font-medium ml-3 lg:hidden xl:block truncate">
-                                {item.name}
-                              </span>
-                            </div>
-                            <div className="flex shrink-0 lg:hidden xl:block">
-                              {open ? (
-                                <FaChevronDown className={`w-3 h-3 ${item.active ? "text-white" : "text-gray-600 dark:text-gray-400"}`} />
-                              ) : (
-                                <FaChevronRight className={`w-3 h-3 ${item.active ? "text-white" : "text-gray-600 dark:text-gray-400"}`} />
-                              )}
-                            </div>
-                          </button>
-                          
-                          {open && (
-                            <ul className="mt-1 ml-4 pl-6 border-l-2 border-green-200 dark:border-green-800">
-                              {item.submenu.map((subItem, subIndex) => (
-                                <li key={subIndex} className="mb-1 last:mb-0">
-                                  <NavLink
-                                    end
-                                    to={subItem.path}
-                                    className={({ isActive }) =>
-                                      `block p-2 text-sm rounded transition-colors duration-150 ${
-                                        isActive
-                                          ? "text-green-800 font-medium bg-green-100 dark:bg-green-900/30 dark:text-white"
-                                          : "text-gray-600 dark:text-gray-400 hover:text-green-800 dark:hover:text-white hover:bg-green-50 dark:hover:bg-gray-700"
-                                      }`
-                                    }
-                                    onClick={() => setSidebarOpen(false)}
-                                  >
-                                    {subItem.name}
-                                  </NavLink>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      );
-                    }}
-                  </SidebarLinkGroup>
-                ) : (
-                  <NavLink
-                    end
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center p-3 rounded-lg transition-all duration-200 mb-1 ${
-                        isActive
-                          ? "bg-green-800 text-white"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-gray-700 hover:text-green-800 dark:hover:text-white"
-                      }`
-                    }
-                    onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
-                  >
-                    <span className={`${item.active ? "text-white" : "text-gray-600 dark:text-gray-400"} flex-shrink-0`}>
-                      {item.icon}
-                    </span>
-                    <span className="text-sm font-medium ml-3 lg:hidden xl:block truncate">
-                      {item.name}
-                    </span>
-                  </NavLink>
+        {/* Section informations utilisateur */}
+        {userInfo && (
+          <div className="px-3 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <div className="bg-green-100 p-2 rounded-full flex-shrink-0">
+                <FaUserTie className="w-5 h-5 text-green-600" />
+              </div>
+              <div className={`ml-3 min-w-0 transition-all duration-300 ${
+                sidebarExpanded ? "opacity-100" : "lg:opacity-0 xl:opacity-100"
+              }`}>
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {userInfo.firstName} {userInfo.lastName}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {userInfo.matricule}
+                </p>
+                {userInfo.isAdmin && (
+                  <span className="inline-block px-1.5 py-0.5 text-[10px] bg-red-100 text-red-800 rounded-full mt-1">
+                    Admin
+                  </span>
                 )}
               </div>
-            ))}
+            </div>
           </div>
+        )}
 
-          {/* Additional section for settings and logout */}
-          <div className="mt-auto pt-4">
+        {/* Navigation principale */}
+        <div className="flex-1 flex flex-col py-4">
+          <nav className="flex-1 space-y-1 px-2">
+            {menuItems.map((item, index) => (
+              <NavLink
+                key={index}
+                end
+                to={item.path}
+                className={({ isActive }) =>
+                  `group flex items-center p-2 rounded-lg transition-all duration-200 ${
+                    isActive
+                      ? "bg-green-800 text-white shadow-md"
+                      : "text-gray-700 hover:bg-green-50 hover:text-green-800"
+                  }`
+                }
+                onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
+              >
+                <div className={`flex items-center w-full ${
+                  isActive(item.path) ? "text-white" : "text-gray-600"
+                }`}>
+                  {item.icon}
+                  <span className={`ml-3 text-sm font-medium truncate transition-all duration-300 ${
+                    sidebarExpanded ? "opacity-100" : "lg:opacity-0 xl:opacity-100"
+                  }`}>
+                    {item.name}
+                  </span>
+                </div>
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* Section basse */}
+          <div className="mt-auto px-2 space-y-1">
             <NavLink
               to="/monprofil"
               className={({ isActive }) =>
-                `flex items-center p-3 rounded-lg transition-all duration-200 mb-1 ${
+                `group flex items-center p-2 rounded-lg transition-all duration-200 ${
                   isActive
                     ? "bg-green-800 text-white"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-gray-700 hover:text-green-800 dark:hover:text-white"
-                }`
-              }
-              onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
+                    : "text-gray-700 hover:bg-green-50 hover:text-green-800"
+                }`}
             >
-            
-              <FaPortrait className={`${pathname === "/monprofil" ? "text-white" : "text-gray-600 dark:text-gray-400"} flex-shrink-0`} />
-              <span className="text-sm font-medium ml-3 lg:hidden xl:block">
+              <FaPortrait className="w-5 h-5 flex-shrink-0" />
+              <span className={`ml-3 text-sm font-medium truncate transition-all duration-300 ${
+                sidebarExpanded ? "opacity-100" : "lg:opacity-0 xl:opacity-100"
+              }`}>
                 Mon profil
               </span>
             </NavLink>
             
             <button 
-              className="flex items-center w-full p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-gray-700 hover:text-green-800 dark:hover:text-white transition-all duration-200"
+              className="group flex items-center w-full p-2 rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all duration-200"
               onClick={handleLogout}
             >
-              <FaSignOutAlt className="text-gray-600 dark:text-gray-400 flex-shrink-0" />
-              <span className="text-sm font-medium ml-3 lg:hidden xl:block">
+              <FaSignOutAlt className="w-5 h-5 flex-shrink-0" />
+              <span className={`ml-3 text-sm font-medium truncate transition-all duration-300 ${
+                sidebarExpanded ? "opacity-100" : "lg:opacity-0 xl:opacity-100"
+              }`}>
                 Déconnexion
               </span>
             </button>
           </div>
         </div>
 
-        {/* Expand/Collapse button for desktop */}
-        <div className="hidden lg:flex items-center justify-center p-3 border-t border-gray-200 dark:border-gray-700">
+        {/* Bouton expand/collapse (desktop) */}
+        <div className="hidden lg:flex items-center justify-center p-3 border-t border-gray-200">
           <button
             onClick={() => setSidebarExpanded(!sidebarExpanded)}
-            className="text-gray-600 dark:text-gray-400 hover:text-green-800 dark:hover:text-white transition-colors"
+            className="p-1.5 rounded-lg text-gray-500 hover:text-green-700 hover:bg-green-50 transition-colors"
             aria-label={sidebarExpanded ? "Réduire le menu" : "Développer le menu"}
           >
             {sidebarExpanded ? (
-              <FaChevronDown className="w-4 h-4" />
+              <FaChevronLeft className="w-3 h-3" />
             ) : (
-              <FaChevronRight className="w-4 h-4" />
+              <FaChevronRight className="w-3 h-3" />
             )}
           </button>
         </div>
-      </div>  
-    </div>
+      </div>
+    </>
   );
 }
 

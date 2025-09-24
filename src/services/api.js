@@ -245,7 +245,26 @@ export const api = {
       console.error("Erreur getUsers:", error);
       throw error;
     }
-  }, 
+  },
+
+  async searchUsers(text) {
+    if (VITE_MODE === 'DEV') {
+      return { data: data.users };
+    }
+    try {
+      return await this.request('/users/search', {
+        method: 'GET',
+        params: {
+          searchText:text
+        }
+      });
+    } catch (error) {
+      console.error("Erreur getUsers:", error);
+      throw error;
+    }
+  },
+
+
 
   async attributeRolesToUser(attributionData) {
     try {

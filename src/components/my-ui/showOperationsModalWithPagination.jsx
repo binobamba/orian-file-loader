@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Swal from 'sweetalert2';
+import {FaSearch } from 'react-icons/fa'
 import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
@@ -28,9 +29,30 @@ export const showOperationsModalWithPagination = (operationsData = []) => {
     return (
       <div className="w-full">
         <div className="mb-4 flex justify-between items-center">
-          <span className="text-sm text-gray-600">
-            Total: {operationsData.length} opération(s)
-          </span>
+
+                
+                <div className="relative w-[50vh]">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none w-full">
+                    <FaSearch className="text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    id="firstName"
+                    placeholder="Numéro de compte"
+                    // value={searchFirstName}
+                    // onChange={(e) => setSearchFirstName(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
+                             bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
+                             focus:ring-green-800 focus:border-green-800 
+                             dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  />
+                </div>
+
+                <span className="text-sm text-gray-600">
+                  Total: {operationsData.length} opération(s)
+                </span>
+              
+
           <span className="text-sm text-gray-600">
             Page {currentPage} sur {totalPages}
           </span>

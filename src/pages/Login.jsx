@@ -16,7 +16,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+    
     const result = await login(email, password);
     if (result.success) {
       navigate("/");
@@ -30,6 +30,7 @@ export default function Login() {
   return (
     <div className="min-h-[60vh] bg-gradient-to-br from-green-900 via-emerald-800 to-teal-900">
       <div className="flex">
+
         {/* Partie formulaire */}
         <div className="flex flex-col justify-center px-6 py-12 lg:px-8 w-full lg:w-1/2">
           <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -45,6 +46,7 @@ export default function Login() {
           </div>
 
           <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-sm">
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Message d'erreur */}
               {error && (
@@ -157,14 +159,16 @@ export default function Login() {
           
           
         </div>
+
       </div>
 
       {/* Footer */}
       <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
         <p className="text-xs text-white">
-          © 2024 {APP_NAME}. Tous droits réservés.
+          ©2025 {APP_NAME}. Tous droits réservés.
         </p>
       </div>
+
     </div>
   );
 }

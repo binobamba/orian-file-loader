@@ -145,21 +145,21 @@ export const BeautifulTable = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.length === 0 ? (
+            {data?.length === 0 ? (
               <TableRow>
                 <TableData colSpan={headers.length} align="center" className="py-8 text-gray-500 dark:text-gray-400 w-ful">
                   {emptyMessage}
                 </TableData>
               </TableRow>
             ) : (
-              data.map((item, index) => renderRow(item, index))
+              data?.map((item, index) => renderRow(item, index))
             )}
           </TableBody>
         </Table>
       </TableWrapper>
 
       {/* Pagination */}
-      {pagination && data.length > 0 && (
+      {pagination && data?.length > 0 && (
         <Pagination
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}

@@ -14,16 +14,13 @@ import Demande from './pages/Demande';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import UserRole from './pages/User-Role';
-import ListeProfiles from  './pages/ListeProfiles';
-
-import RolePermission from './pages/RolePermission'
-import Monprofil from './pages/Monprofil'
-
+import ListeProfiles from './pages/ListeProfiles';
+import RolePermission from './pages/RolePermission';
+import Monprofil from './pages/Monprofil';
 
 function App() {
   const location = useLocation();
 
-  // Remonter en haut à chaque changement de route
   useEffect(() => {
     const html = document.querySelector('html');
     html.style.scrollBehavior = 'auto';
@@ -36,7 +33,7 @@ function App() {
       <Routes>
         {/* Layout principal (après connexion) */}
         <Route element={<MainLayout />}>
-
+          {/* Redirection vers le dashboard par défaut */}
           <Route
             path="/"
             element={
@@ -45,6 +42,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Dashboard - accessible à tous les utilisateurs authentifiés */}
           <Route
             path="/dashboard"
             element={
@@ -54,18 +53,7 @@ function App() {
             }
           />
 
-          {/* ==================== USERS MANAGEMENT and ROLES ==================== */}
-          <Route
-            path="/user-role"
-            element={
-              <ProtectedRoute>
-                <UserRole />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* ==================== DEMANDES MANAGERS ==================== */}
-
+          {/* Demandes - accessible à tous les utilisateurs authentifiés */}
           <Route
             path="/demandes"
             element={
@@ -75,28 +63,35 @@ function App() {
             }
           />
 
-           <Route
+          {/* Pages réservées aux administrateurs */}
+          <Route
+            path="/user-role"
+            element={
+              <ProtectedRoute moduleName="gestion_utilisateurs">
+                <UserRole />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/roles-permissions"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute moduleName="roles_permissions">
                 <RolePermission />
               </ProtectedRoute>
             }
           />
 
           <Route
-          path="/tous-profils"
-          element={
-            <ProtectedRoute>
-              <ListeProfiles />
-            </ProtectedRoute>
-          }
-          >
+            path="/tous-profils"
+            element={
+              <ProtectedRoute moduleName="profils_orion">
+                <ListeProfiles />
+              </ProtectedRoute>
+            }
+          />
 
-
-          </Route>
-
-
+          {/* Mon profil - accessible à tous les utilisateurs authentifiés */}
           <Route
             path="/monprofil"
             element={
@@ -105,13 +100,9 @@ function App() {
               </ProtectedRoute>
             }
           />
-        
-        
         </Route>
 
-          
-
-        {/* Layout d’authentification */}
+        {/* Layout d'authentification */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
         </Route>

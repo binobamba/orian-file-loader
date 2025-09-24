@@ -12,7 +12,7 @@ export const Card = ({
 }) => {
   return (
     <div className="w-full mx-4 dark:bg-gray-500">
-      <div className={`col-span-full mt-1 xl:col-span-8 bg-white dark:bg-gray-800 shadow-xs h-[89vh] overflow-y-auto mb-4 rounded-md border-t-2 border-x-2 border-b-0`}>
+      <div className={`col-span-full mt-1 xl:col-span-8 bg-white dark:bg-gray-800 shadow-xs h-[95vh] overflow-y-auto mb-4 rounded-md border-t-2 border-x-2 border-b-0  ${className}`}>
         <header className={`px-4 sm:px-6 py-1 dark:bg-gray-800 rounded-t-md border-b border-gray-200 dark:border-gray-700`}>
           <div className="flex items-center justify-between">
             <h2 className="text-lg sm:text-xl md:text-2xl text-gray-900  truncate font-bold">

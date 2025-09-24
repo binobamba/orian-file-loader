@@ -1,18 +1,26 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react'; 
 import { useNavigate } from 'react-router-dom';
-import { FaEdit, FaPlus, FaSearch, FaTimes, FaRegTrashAlt, FaEye } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaSearch, FaTimes, FaRegTrashAlt, FaEye, FaRedo, FaDownload } from 'react-icons/fa';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
 import {
-  BeautifulTable,
-  usePagination
-} from '../components/my-ui/Table';
-import { Button } from '../components/my-ui/Button';
+  Table,
+  Button,
+  Card as AntCard,
+  Input,
+  Select,
+  DatePicker,
+  Tag,
+} from 'antd';
+import moment from 'moment';
+import 'moment/locale/fr';
 import { Card } from '../components/my-ui/Card';
 import { showValidationModal } from '../components/my-ui/showValidationModal';
 import { showDemandeForm } from '../components/my-ui/showDemandeForm';
 import {showOperationsModalWithPagination} from '../components/my-ui/showOperationsModalWithPagination';
-import { message } from 'antd';
+
+const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 export default function Demande() {
   const [data, setData] = useState({
@@ -23,6 +31,8 @@ export default function Demande() {
     size: 10
   });
   const [loading, setLoading] = useState(false);
+  const [demandeurs, setDemandeurs] = useState([]);
+  const [demandeursLoading, setDemandeursLoading] = useState(false);
   const navigate = useNavigate();
 
   // États pour les champs de recherche
@@ -32,35 +42,54 @@ export default function Demande() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const pagination = usePagination(1, 10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [isClearing, setIsClearing] = useState(false);
+  const [hoverStates, setHoverStates] = useState({
+    clearButton: false,
+    referenceInput: false,
+    statusSelect: false,
+    demandeurSelect: false,
+    startDate: false,
+    endDate: false
+  });
   const isMounted = useRef(true);
+
+  // Gestionnaires d'états de survol
+  const handleMouseEnter = (element) => {
+    setHoverStates(prev => ({ ...prev, [element]: true }));
+  };
+
+  const handleMouseLeave = (element) => {
+    setHoverStates(prev => ({ ...prev, [element]: false }));
+  };
+
+  // Charger la liste des demandeurs
+  const fetchDemandeurs = useCallback(async (searchQuery = '') => {
+    if (!isMounted.current) return;
+    console.log("Actualisation de la liste des demandeurs",)
+    try {
+      setDemandeursLoading(true);
+      const response = await api.searchUsers({ text: searchQuery });
+      const responseData = response.data || [] ;
+      
+      setDemandeurs(responseData?.content || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des demandeurs:', error);
+      setDemandeurs([]);
+    } finally {
+      setDemandeursLoading(false);
+    }
+  }, []);
 
   // Configuration des statuts
   const getStatusConfig = (status) => {
     const statusConfigs = {
-      'VALIDEE': {
-        label: 'VALIDÉE',
-        color: 'green'
-      },
-      'NON_VALIDEE': {
-        label: 'NON VALIDÉE',
-        color: 'red'
-      },
-      'EN_TRAITEMENT': {
-        label: 'EN TRAITEMENT',
-        color: 'blue'
-      }
+      'VALIDEE': { label: 'VALIDÉE', color: 'green' },
+      'NON_VALIDEE': { label: 'NON VALIDÉE', color: 'red' },
+      'EN_TRAITEMENT': { label: 'EN TRAITEMENT', color: 'blue' }
     };
-
-    const config = statusConfigs[status];
-    if (config) {
-      return config;
-    }
-    
-    return {
-      label: status,
-      color: 'gray'
-    };
+    return statusConfigs[status] || { label: status, color: 'default' };
   };
 
   const fetchDemandeData = useCallback(async (page = 1, pageSize = 10, filters = {}) => {
@@ -118,8 +147,7 @@ export default function Demande() {
 
   const showModalValidation = (demandeData) => {
     showValidationModal(demandeData, (demandeId) => {
-      console.log(`Demande ${demandeId} validée avec succès`);
-      fetchDemandeData(pagination.currentPage, pagination.pageSize, {
+      fetchDemandeData(currentPage, pageSize, {
         reference: searchReference,
         operationStatus: searchOperationStatus,
         createdById: searchCreatedById,
@@ -149,19 +177,16 @@ export default function Demande() {
         preConfirm: async () => {
           try {
             await api.cancelIntegrationRequest(demande?.id);
-            fetchDemandeData(pagination.currentPage, pagination.pageSize, {
+            fetchDemandeData(currentPage, pageSize, {
               reference: searchReference,
               operationStatus: searchOperationStatus,
               createdById: searchCreatedById,
               startDate: startDate,
               endDate: endDate
             });
-
             return true;
           } catch (error) {
-            Swal.showValidationMessage(
-              `Erreur lors de la suppression : ${error?.message || "inconnue"}`
-            );
+            Swal.showValidationMessage(`Erreur lors de la suppression : ${error?.message || "inconnue"}`);
             return false;
           }
         }
@@ -192,27 +217,25 @@ export default function Demande() {
   };
 
   const handleClearSearch = () => {
+    setIsClearing(true);
     setSearchReference('');
     setSearchOperationStatus('');
     setSearchCreatedById('');
     setStartDate('');
     setEndDate('');
-    pagination.goToPage(1);
-    fetchDemandeData(1, pagination.pageSize, {});
+    setCurrentPage(1);
+    
+    setTimeout(() => {
+      setIsClearing(false);
+    }, 500);
   };
 
-  const handlePageChange = (page) => {
-    pagination.goToPage(page);
-    fetchDemandeData(page, pagination.pageSize, {
-      reference: searchReference,
-      operationStatus: searchOperationStatus,
-      createdById: searchCreatedById,
-      startDate: startDate,
-      endDate: endDate
-    });
+  const handleTableChange = (pagination, filters, sorter) => {
+    setCurrentPage(pagination.current);
+    setPageSize(pagination.pageSize);
   };
 
-  // Fonction de debounce améliorée
+  // Fonction de debounce
   const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
     
@@ -236,16 +259,17 @@ export default function Demande() {
   const debouncedStartDate = useDebounce(startDate, 500);
   const debouncedEndDate = useDebounce(endDate, 500);
 
-  // Effet principal pour la recherche
+  // Effect pour les requêtes
   useEffect(() => {
     if (isMounted.current) {
-      fetchDemandeData(1, pagination.pageSize, {
+      fetchDemandeData(currentPage, pageSize, {
         reference: debouncedSearchReference,
         operationStatus: debouncedSearchOperationStatus,
         createdById: debouncedSearchCreatedById,
         startDate: debouncedStartDate,
         endDate: debouncedEndDate
       });
+      fetchDemandeurs('');
     }
   }, [
     debouncedSearchReference,
@@ -253,8 +277,10 @@ export default function Demande() {
     debouncedSearchCreatedById,
     debouncedStartDate,
     debouncedEndDate,
-    pagination.pageSize,
-    fetchDemandeData
+    currentPage,
+    pageSize,
+    fetchDemandeData,
+    fetchDemandeurs
   ]);
 
   // Nettoyage du composant
@@ -266,8 +292,151 @@ export default function Demande() {
 
   const hasActiveFilters = searchReference || searchOperationStatus || searchCreatedById || startDate || endDate;
 
+  // Configuration des colonnes pour le tableau
+  const columns = [
+    {
+      title: 'RÉFÉRENCE',
+      dataIndex: 'reference',
+      key: 'reference',
+      align: 'left',
+      render: (text) => (
+        <div className="whitespace-nowrap overflow-hidden text-ellipsis w-full" title={text}>
+          {text}
+        </div>
+      ),
+    },
+    {
+      title: 'DÉBIT',
+      dataIndex: 'debitAmount',
+      key: 'debitAmount',
+      align: 'center',
+      render: (amount) => <span className="whitespace-nowrap">{formatAmount(amount)}</span>
+    },
+    {
+      title: 'CRÉDIT',
+      dataIndex: 'creditAmount',
+      key: 'creditAmount',
+      align: 'center',
+      render: (amount) => <span className="whitespace-nowrap">{formatAmount(amount)}</span>
+    },
+    {
+      title: 'ÉQUILIBRE',
+      dataIndex: 'equilibre',
+      key: 'isbalanced',
+      align: 'center',
+      render: (amount) => <span className="whitespace-nowrap">{formatAmount(amount)}</span>
+    },
+    {
+      title: 'INTÉGRATION',
+      dataIndex: 'integrationStatus',
+      key: 'integrationStatus',
+      align: 'center',
+      render: (status) => {
+        const config = getStatusConfig(status);
+        return <Tag color={config.color} className="whitespace-nowrap">{config.label}</Tag>;
+      }
+    },
+    {
+      title: 'OPÉRATION',
+      dataIndex: 'operationStatus',
+      key: 'operationStatus',
+      align: 'center',
+      render: (status) => {
+        const config = getStatusConfig(status);
+        return <Tag color={config.color} className="whitespace-nowrap">{config.label}</Tag>;
+      }
+    },
+    {
+      title: 'DEMANDEUR',
+      key: 'createdBy',
+      align: 'center',
+      render: (record) => (
+        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+          {record.createdBy ? (
+            <span title={`${record.createdBy.firstName} ${record.createdBy.lastName} (${record.createdBy.matricule})`}>
+              {record.createdBy.firstName} {record.createdBy.lastName} ({record.createdBy.matricule})
+            </span>
+          ) : 'N/A'}
+        </div>
+      )
+    },
+    {
+      title: 'VALIDÉ PAR',
+      key: 'validatedBy',
+      align: 'center',
+      render: (record) => (
+        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+          {record.validatedBy ? (
+            <>
+              {record.validatedBy.firstName} {record.validatedBy.lastName} ({record.validatedBy.matricule})
+            </>
+          ) : 'N/A'}
+        </div>
+      )
+    },
+    {
+      title: 'DATE DEMANDE',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      align: 'center',
+      render: (date) => <span className="whitespace-nowrap">{date ? formatDate(date) : '-'}</span>
+    },
+     {
+      title: "ACTIONS",
+      key: "actions",
+      align: "center",
+      fixed: "right",
+      render: (record) => (
+        <div className="flex items-center justify-center gap-1 whitespace-nowrap">
+          {/* Bouton Valider */}
+          <button
+            onClick={() => showModalValidation(record)}
+            title="Valider"
+            aria-label="Valider"
+            className="p-1 rounded-full hover:bg-orange-600 text-green-800 transition hover:text-white"
+          >
+            <FaEdit className="text-lg" />
+          </button>
+
+          {/* Bouton Supprimer */}
+          <button
+            onClick={() => DeleteDemande(record)}
+            title="ANNULER"
+            aria-label="ANNULER"
+            className="p-1 rounded-full text-orange-600 hover:text-white hover:bg-orange-600 dark:text-green-400 dark:hover:text-green-300 transition-colors"
+          >
+            <FaRegTrashAlt className="text-lg" />
+          </button>
+
+          {/* Bouton Visualiser */}
+          <button
+            onClick={() => VisualiserDemande(record)}
+            title="Visualiser les opérations"
+            aria-label="Visualiser les opérations"
+            className="p-1 rounded-full hover:bg-orange-600 text-green-800 transition hover:text-white"
+          >
+            <FaEye className="text-lg" />
+          </button>
+
+          
+          {/* Bouton Visualiser */}
+          <button
+            onClick={() => VisualiserDemande(record)}
+            title="Télécharger"
+            aria-label="Télécharger"
+            className="p-1 rounded-full hover:bg-orange-600 text-gray-600 transition hover:text-white"
+          >
+            <FaDownload className="text-lg" />
+          </button>
+
+
+        </div>
+      ),
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100 pr-5">
+    <div className="w-full no-scrollbar">
       <Card
         title="GESTION DES DEMANDES"
         buttonText="Nouvelle demande"
@@ -275,287 +444,161 @@ export default function Demande() {
         onClickAddButton={showDemandeForm}
         icon={<FaPlus className="inline mr-1" />}
       >
-        {/* Conteneur avec défilement et en-tête fixe */}
-        <div className="h-[80vh] overflow-y-auto">
-          
-          {/* En-tête fixe */}
-          <div className="sticky top-0 bg-white z-10 pt-4 pb-2 border-b shadow-sm">
-         <div className="relative">
-        <div className="overflow-x-auto md:overflow-visible">
-      <div className="grid grid-cols-5 md:grid-cols-5 gap-4 items-end min-w-[900px] md:min-w-0">
-      
-      {/* Champ référence */}
-      <div className="flex flex-col">
-        <label
-          htmlFor="reference"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Référence
-        </label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FaSearch className="text-gray-400" />
-          </div>
-          <input
-            type="text"
-            id="reference"
-            placeholder="Référence"
-            value={searchReference}
-            onChange={(e) => setSearchReference(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
-                      bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                      focus:ring-green-800 focus:border-green-800 
-                      dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
-        </div>
-      </div>
+        <div className="h-[85vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white z-10 pb-2 border-b border-gray-200 shadow-sm">
+            <div className="relative">
+              <div className="overflow-x-auto">
+                {/* Grille des filtres avec Tailwind CSS */}
+                <div className="grid grid-cols-6 gap-4 items-end min-w-[1100px]">
+                  {/* Bouton de réinitialisation */}
+                  <div className="flex flex-col">
+                    <label htmlFor="reset" className="block text-xs font-bold text-gray-800 mb-1 justify-center ">
+                      EFFACER
+                    </label>
+                    <Button
+                      id="reset"
+                      type="default"
+                      size="default"
+                      onClick={handleClearSearch}
+                      onMouseEnter={() => handleMouseEnter("clearButton")}
+                      onMouseLeave={() => handleMouseLeave("clearButton")}
+                      className="w-full flex items-center justify-center rounded-lg 
+                                hover:bg-red-500 hover:text-white transition-all duration-300"
+                      title="Réinitialiser tous les filtres"
+                      disabled={isClearing}
+                      icon={<FaRedo className="text-lg" />}
+                    />
+                  </div>
 
-      {/* Champ statut opération */}
-      <div className="flex flex-col">
-        <label
-          htmlFor="operationStatus"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Statut Opération
-        </label>
-        <select
-          id="operationStatus"
-          value={searchOperationStatus}
-          onChange={(e) => setSearchOperationStatus(e.target.value)}
-          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md 
-                    bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                    focus:ring-green-800 focus:border-green-800 
-                    dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        >
-          <option value="">TOUS LES STATUTS</option>
-          <option value="VALIDEE">VALIDEE</option>
-          <option value="NON_VALIDEE">NON VALIDE</option>
-          <option value="EN_TRAITEMENT">EN TRAITEMENT</option>
-        </select>
-      </div>
+                  {/* Champ référence */}
+                  <div className="flex flex-col">
+                    <label htmlFor="reference" className="block text-xs font-bold text-gray-800 mb-1 text-center">
+                      REFERENCE
+                    </label>
+                    <Input
+                      id="reference"
+                      placeholder="Référence"
+                      size="default"
+                      value={searchReference}
+                      onChange={(e) => setSearchReference(e.target.value)}
+                      prefix={<FaSearch className="text-gray-400" />}
+                      className="rounded-lg"
+                    />
+                  </div>
 
-      {/* Champ ID créateur */}
-      <div className="flex flex-col">
-        <label
-          htmlFor="createdById"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          DEMANDEUR
-        </label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FaSearch className="text-gray-400" />
-          </div>
-          <input
-            type="text"
-            id="createdById"
-            placeholder="ID du demandeur"
-            value={searchCreatedById}
-            onChange={(e) => setSearchCreatedById(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md 
-                      bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                      focus:ring-green-800 focus:border-green-800 
-                      dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
-        </div>
-      </div>
+                  {/* Champ statut opération */}
+                  <div className="flex flex-col">
+                    <label htmlFor="operationStatus" className="block text-xs font-bold text-gray-800 mb-1 text-center">
+                      STATUT OPÉRATION
+                    </label>
+                    <Select
+                      id="operationStatus"
+                      value={searchOperationStatus || undefined}
+                      onChange={setSearchOperationStatus}
+                      placeholder="TOUS LES STATUTS"
+                      size="default"
+                      className="w-full rounded-lg"
+                    >
+                      <Option value="">TOUS LES STATUTS</Option>
+                      <Option value="VALIDEE">VALIDEE</Option>
+                      <Option value="NON_VALIDEE">NON VALIDEE</Option>
+                      <Option value="EN_TRAITEMENT">EN TRAITEMENT</Option>
+                    </Select>
+                  </div>
 
-      {/* Champ date de début */}
-      <div className="flex flex-col">
-        <label
-          htmlFor="startDate"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Date de début
-        </label>
-        <input
-          type="date"
-          id="startDate"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md 
-                    bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                    focus:ring-green-800 focus:border-green-800 
-                    dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        />
-      </div>
+                  {/* Champ Demandeur */}
+                  <div className="flex flex-col">
+                    <label htmlFor="demandeur" className="block text-xs font-bold text-gray-800 mb-1 text-center">
+                      DEMANDEUR
+                    </label>
+                    <Select
+                      id="demandeur"
+                      value={searchCreatedById || undefined}
+                      showSearch
+                      optionFilterProp="children"
+                      onFocus={() => fetchDemandeurs('')}
+                      onChange={setSearchCreatedById}
+                      placeholder="Sélectionner un demandeur"
+                      loading={demandeursLoading}
+                      size="default"
+                      className="w-full rounded-lg"
+                    >
+                      <Option value="">Sélectionner un demandeur</Option>
+                      {demandeurs?.map((demandeur) => (
+                        <Option key={demandeur.id} value={demandeur.id}>
+                          {`${demandeur.firstName} ${demandeur.lastName} (${demandeur.matricule})`}
+                        </Option>
+                      ))}
+                    </Select>
+                  </div>
 
-            {/* Champ date de fin */}
-            <div className="flex flex-col">
-              <label
-                htmlFor="endDate"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Date de fin
-              </label>
-              <input
-                type="date"
-                id="endDate"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md 
-                          bg-white placeholder-gray-400 focus:outline-none focus:ring-1 
-                          focus:ring-green-800 focus:border-green-800 
-                          dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+                  {/* Champ date de début */}
+                  <div className="flex flex-col">
+                    <label htmlFor="startDate" className="block text-xs font-bold text-gray-800 mb-1 text-center">
+                      DATE DE DÉBUT
+                    </label>
+                    <DatePicker
+                      id="startDate"
+                      value={startDate ? moment(startDate) : null}
+                      onChange={(date, dateString) => setStartDate(dateString)}
+                      size="default"
+                      className="w-full rounded-lg"
+                    />
+                  </div>
 
-            {/* Bouton Effacer */}
-            <div className="flex gap-2 pt-3">
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="px-3 py-2 text-sm rounded-md bg-gray-500 text-white hover:bg-gray-600"
-                >
-                  <FaTimes className="inline mr-1" />
-                  Effacer
-                </button>
-              )}
+                  {/* Champ date de fin */}
+                  <div className="flex flex-col">
+                    <label htmlFor="endDate" className="block text-xs font-bold text-gray-800 mb-1 text-center">
+                      DATE DE FIN
+                    </label>
+                    <DatePicker
+                      id="endDate"
+                      value={endDate ? moment(endDate) : null}
+                      onChange={(date, dateString) => setEndDate(dateString)}
+                      size="default"
+                      className="w-full rounded-lg"
+                    />
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
 
           {/* Contenu scrollable */}
-          <div className="py-4 space-y-6">
+          <div className="py-4 flex flex-col gap-6">
             <div className="flex-1 overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="mt-2 text-gray-600 dark:text-gray-400">Chargement...</p>
+                    <div className="animate-spin w-12 h-12 border-3 border-gray-200 border-t-orange-600 rounded-full mx-auto"></div>
+                    <p className="mt-2 text-gray-600">Chargement...</p>
                   </div>
                 </div>
               ) : (
-                <div className="h-full overflow-max">
-                  <BeautifulTable
-                    headers={[
-                      { label: "RÉFÉRENCE", align: "center", className: "text-center whitespace-nowrap bg-gray-100" },
-                      { label: "DÉBIT", align: "center", className: "text-center whitespace-nowrap" },
-                      { label: "CRÉDIT", align: "center", className: "text-center whitespace-nowrap" },
-                      { label: "INTÉGRATION", align: "center", className: "text-center whitespace-nowrap" },
-                      { label: "OPÉRATION", align: "center", className: "text-center whitespace-nowrap" },
-                      { label: "DEMANDEUR", align: "center", className: "text-center whitespace-nowrap" },
-                      { label: "VALIDÉ PAR", align: "center", className: "text-center whitespace-nowrap" },
-                      { label: "DATE DEMANDE", align: "center", className: "text-center whitespace-nowrap" },
-                      { label: "ACTIONS", align: "center", className: "text-center whitespace-nowrap bg-gray-100 sticky right-0 z-10" }
-                    ]}
-                    data={data.content}
-                    emptyMessage={hasActiveFilters ? "Aucune demande trouvée avec ces critères" : "Aucune demande disponible"}
-                    pagination={{
-                      currentPage: data.number + 1,
-                      totalPages: data.totalPages,
-                      totalElements: data.totalElements,
-                      pageSize: data.size,
-                      onPageChange: handlePageChange
-                    }}
-                    renderRow={(record) => (
-                      <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                          {record.reference}
-                        </td>
-                        <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                          {formatAmount(record.debitAmount)}
-                        </td>
-                        <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                          {formatAmount(record.creditAmount)}
-                        </td>
-                        <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              getStatusConfig(record.integrationStatus).color === 'green' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : getStatusConfig(record.integrationStatus).color === 'red'
-                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                : getStatusConfig(record.integrationStatus).color === 'blue'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                            }`}
-                          >
-                            {getStatusConfig(record.integrationStatus).label}
-                          </span>
-                        </td>
-                        <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              getStatusConfig(record.operationStatus).color === 'green' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : getStatusConfig(record.operationStatus).color === 'red'
-                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                : getStatusConfig(record.operationStatus).color === 'blue'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                            }`}
-                          >
-                            {getStatusConfig(record.operationStatus).label}
-                          </span>
-                        </td>
-                        <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                          <div className="flex flex-col items-center">
-                            <span className="font-medium whitespace-nowrap">
-                              {record.createdBy ? (
-                                <>
-                                  {record.createdBy.firstName} {record.createdBy.lastName} ({record.createdBy.matricule})
-                                </>
-                              ) : 'N/A'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                          <div className="flex flex-col items-center">
-                            <span className="font-medium whitespace-nowrap">
-                              {record.validatedBy ? (
-                                <>
-                                  {record.validatedBy.firstName} {record.validatedBy.lastName} ({record.validatedBy.matricule})
-                                </>
-                              ) : 'N/A'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap">
-                          {record.createdAt ? formatDate(record.createdAt) : '-'}
-                        </td>
-                        <td className="p-2 sm:p-3 text-center text-xs sm:text-sm whitespace-nowrap bg-white sticky right-0 z-2">
-                          <div className="flex space-x-1 justify-center">
-                            <Button 
-                              onClick={() => showModalValidation(record)}
-                              size="sm"
-                              variant="outline"
-                              className="text-xs px-2 py-1 whitespace-nowrap"
-                              title="Valider"
-                            >
-                              <FaEdit className="inline h-4 w-4" /> 
-                            </Button>
-
-                            <Button 
-                              onClick={() => DeleteDemande(record)}
-                              size="sm"
-                              variant="outline"
-                              className="text-xs px-2 py-1"
-                              title="Supprimer"
-                            >
-                              <FaRegTrashAlt className="inline h-4 w-4" />
-                            </Button>
-
-                             <Button 
-                              onClick={() => VisualiserDemande(record)}
-                              size="sm"
-                              variant="outline"
-                              className="text-xs px-2 py-1"
-                              title="Télécharger"
-                            >
-                              <FaEye className="inline h-4 w-4" />
-                            </Button>
-
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                    stickyHeader={true}
-                  />
-                </div>
+                <Table
+                  columns={columns}
+                  dataSource={data.content}
+                  rowKey="id"
+                  loading={loading}
+                  scroll={{ x: 1300, y: '60vh' }}
+                  size="small"
+                  bordered={true}
+                  pagination={{
+                    current: currentPage,
+                    pageSize: pageSize,
+                    total: data.totalElements,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => `${range[0]}-${range[1]} sur ${total} demandes`,
+                  }}
+                  onChange={handleTableChange}
+                  locale={{
+                    emptyText: hasActiveFilters 
+                      ? "Aucune demande trouvée avec ces critères" 
+                      : "Aucune demande disponible"
+                  }}
+                />
               )}
             </div>
           </div>

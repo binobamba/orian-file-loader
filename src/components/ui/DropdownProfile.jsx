@@ -25,7 +25,6 @@ function DropdownProfile({ align = 'right' }) {
     fetchData();
   }, []);
 
-  // Fonction de déconnexion
   const handleLogout = async () => {
     try {
       await api.logout();
@@ -35,20 +34,16 @@ function DropdownProfile({ align = 'right' }) {
     }
   };
 
-  // Fermer le dropdown en cliquant à l'extérieur
   useEffect(() => {
     const clickHandler = ({ target }) => {
       if (!dropdown.current || !trigger.current) return;
-      if (!dropdownOpen || 
-          dropdown.current.contains(target) || 
-          trigger.current.contains(target)) return;
+      if (!dropdownOpen || dropdown.current.contains(target) || trigger.current.contains(target)) return;
       setDropdownOpen(false);
     };
     document.addEventListener('click', clickHandler);
     return () => document.removeEventListener('click', clickHandler);
   }, [dropdownOpen]);
 
-  // Fermer avec la touche Échap
   useEffect(() => {
     const keyHandler = ({ key }) => {
       if (!dropdownOpen || key !== 'Escape') return;
@@ -59,17 +54,11 @@ function DropdownProfile({ align = 'right' }) {
     return () => document.removeEventListener('keydown', keyHandler);
   }, [dropdownOpen]);
 
-  // Vérifier si l'utilisateur est administrateur
-  const isAdmin = userData?.roles?.some(role => 
-    role.name.toLowerCase().includes('admin') || 
-    role.name.toLowerCase().includes('administrateur')
-  );
-
   return (
     <div className="relative inline-flex">
       <button
         ref={trigger}
-        className="inline-flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-violet-400 rounded-full px-2 py-1 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+        className="inline-flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-green-400 rounded-full px-2 py-1 transition-colors duration-200 hover:bg-gray-100"
         aria-haspopup="true"
         aria-label="Menu utilisateur"
         onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -77,19 +66,19 @@ function DropdownProfile({ align = 'right' }) {
       >
         <div className="flex items-center truncate">
           <FaUserCircle
-            className="w-8 h-8 text-gray-700 dark:text-gray-300"
+            className="w-8 h-8 text-gray-700"
             aria-hidden="true"
           />
           <div className="ml-2 text-left hidden md:block">
-            <span className="block text-sm font-medium text-gray-800 dark:text-white truncate max-w-[120px]">
-              {userData?.firstName} {userData.lastName}
+            <span className="block text-sm font-medium text-gray-800 truncate max-w-[120px]">
+              {userData?.firstName} {userData?.lastName}
             </span>
-            <span className="block text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">
+            <span className="block text-xs text-gray-500 truncate max-w-[120px]">
               {userData?.orionSheet?.profile || userData?.matricule}
             </span>
           </div>
           <FaAngleDown
-            className={`w-4 h-4 ml-1 text-gray-600 dark:text-gray-300 transition-transform duration-200 ${
+            className={`w-4 h-4 ml-1 text-gray-600 transition-transform duration-200 ${
               dropdownOpen ? 'rotate-180' : ''
             }`}
             aria-hidden="true"
@@ -98,7 +87,7 @@ function DropdownProfile({ align = 'right' }) {
       </button>
 
       <Transition
-        className={`origin-top-right absolute top-full mt-2 min-w-60 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-50 overflow-hidden ${
+        className={`origin-top-right absolute top-full mt-2 min-w-60 rounded-lg bg-white border border-gray-200 shadow-lg z-50 overflow-hidden ${
           align === 'right' ? 'right-0' : 'left-0'
         }`}
         show={dropdownOpen}
@@ -111,38 +100,38 @@ function DropdownProfile({ align = 'right' }) {
       >
         <div
           ref={dropdown}
-          className="divide-y divide-gray-100 dark:divide-gray-700"
+          className="divide-y divide-gray-100"
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="options-menu"
         >
           {/* En-tête utilisateur */}
           <div className="px-4 py-3">
-            <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
-              {userData.firstName} {userData.lastName}
+            <p className="text-sm font-bold text-gray-900 truncate">
+              {userData?.firstName} {userData?.lastName}
             </p>
-            <p className="text-xs mt-1 text-gray-500 dark:text-gray-400 italic">
+            <p className="text-xs mt-1 text-gray-500 italic">
               {userData?.orionSheet?.profile} • {userData?.matricule}
-            </p>          </div>
+            </p>
+          </div>
 
           {/* Liens de navigation */}
           <div className="py-2">
             <Link
-              className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-300 transition-colors duration-150"
-              to="/mon-profil"
+              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors duration-150"
+              to="/monprofil"
               onClick={() => setDropdownOpen(false)}
               role="menuitem"
             >
               <FaUserCog className="w-4 h-4 mr-3" aria-hidden="true" />
               Mon profil
             </Link>
-            
           </div>
 
           {/* Déconnexion */}
           <div className="py-2">
             <button
-              className="flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
+              className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
               onClick={handleLogout}
               role="menuitem"
             >

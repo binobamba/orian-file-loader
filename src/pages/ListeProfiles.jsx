@@ -172,13 +172,13 @@ function ListeProfiles() {
                       { label: "Code", align: "left" },
                       { label: "Libellé", align: "left" }
                     ]}
-                    data={profilesData.content}
+                    data={profilesData?.content}
                     emptyMessage={hasActiveFilters ? "Aucun profil trouvé avec ce critère" : "Aucun profil trouvé"}
                     pagination={{
-                      currentPage: profilesData.number + 1,
-                      totalPages: profilesData.totalPages,
-                      totalElements: profilesData.totalElements,
-                      pageSize: profilesData.size,
+                      currentPage: profilesData?.number + 1,
+                      totalPages: profilesData?.totalPages,
+                      totalElements: profilesData?.totalElements,
+                      pageSize: profilesData?.size,
                       onPageChange: handlePageChange
                     }}
                     renderRow={(profile) => (
