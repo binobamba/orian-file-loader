@@ -99,9 +99,9 @@ export const api = {
     }
     
     const userData = sessionStorage.getItem('userData');
-    // if (userData) {
-    //   return JSON.parse(userData);
-    // }
+    if (userData) {
+      return JSON.parse(userData);
+    }
 
     try {
       const response = await this.request('/users/current-user', {
@@ -117,7 +117,6 @@ export const api = {
       return null;
     }
   },
-
 // ==================== DEMANDE ====================
   async searchIntegrationRequests(searchData) {
     if (VITE_MODE === 'DEV') {
@@ -139,6 +138,7 @@ export const api = {
     try {
       return await this.request(`/requests/${id}`, {
         method: 'PUT',
+        params: { status: 'VALIDEE' }
       });
     } catch (error) {
       console.error("Erreur validIntegrationRequest:", error);
@@ -158,8 +158,9 @@ export const api = {
       });
 
       if (result.isConfirmed) {
-        const response = await this.request(`/requests/cancel/${id}`, {
+        const response = await this.request(`/requests/${id}`, {
           method: 'PUT',
+          params: { status: 'ANNULER' }
         });
 
         if (response.status === 200) {

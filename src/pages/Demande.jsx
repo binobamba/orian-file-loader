@@ -83,6 +83,8 @@ export default function Demande() {
     const statusConfigs = {
       'VALIDEE': { label: 'VALIDÉE', color: 'green' },
       'NON_VALIDEE': { label: 'NON VALIDÉE', color: 'red' },
+      'NON_INTEGRER': { label: 'NON INTÉGRER', color: 'red' },
+      'ANNULER': { label: 'ANNULER', color: 'red' },
       'EN_TRAITEMENT': { label: 'EN TRAITEMENT', color: 'blue' }
     };
     return statusConfigs[status] || { label: status, color: 'default' };
