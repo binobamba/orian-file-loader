@@ -23,7 +23,7 @@ build:
     - echo "Building React application..."
     - npm run build
     
-    # Vérification du build
+    ## Vérification du build
     - echo "Build output:"
     - ls -la build/ || ls -la dist/
     - echo "Build completed successfully!"
