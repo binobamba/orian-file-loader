@@ -170,7 +170,7 @@
 /* Personnalisation du header */
 .ant-table-thead > tr > th {
   /* background-color: #219e66 !important;  */
-  background-color: #016630 !important; 
+  background-color: #076f38 !important; 
   color: white !important;
   text-align: center;
 }
@@ -188,5 +188,19 @@
 .custom-modal .ant-modal-close-x {
   color: white;              /* couleur du X */
   font-size: 16px;           /* taille du X */
+}
+
+.ant-table-tbody > tr:nth-child(odd) {
+  background-color: #fafafa;
+}
+
+.ant-table-tbody > tr:nth-child(even) {
+  background-color: #ffffff;
+}
+
+/* Bordures grises */
+.ant-table-tbody > tr > td,
+.ant-table-thead > tr > th {
+  border: 2px solid #3e4743;
 }
 }

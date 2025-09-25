@@ -307,8 +307,9 @@ const showModalRoleToUser = (user, allRoles, onSuccessCallback = null) => {
       Swal.hideLoading();
       
       // Afficher l'erreur dans le modal sans le fermer
+      console.error('Error updating user roles:', error);
       Swal.showValidationMessage(
-        error.message || 'Une erreur est survenue lors de la modification'
+        error?.response.data?.message || 'Une erreur est survenue lors de la modification'
       );
       
       return false;

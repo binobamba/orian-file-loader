@@ -5,9 +5,9 @@ let userPermissionsCache = null;
 
 // Fonction asynchrone pour récupérer les données utilisateur
 async function getUserData() {
-    if (userPermissionsCache) {
-        return userPermissionsCache;
-    }
+    // if (userPermissionsCache) {
+    //     return userPermissionsCache;
+    // }
     
     try {
         const userData = await api.getCurrentUser();
@@ -30,8 +30,7 @@ export async function isAdmin() {
     return userData.roles.some(role => {
         const roleName = role.name?.toLowerCase() || '';
         return roleName.includes('admin') || 
-               roleName.includes('administrateur') ||
-               roleName === 'super admin';
+               roleName.includes('administrateur')
     });
 }
 
@@ -68,4 +67,44 @@ export async function getUserInfo() {
         roles: userData?.roles?.map(role => role.name) || [],
         isAdmin: await isAdmin()
     };
+}
+
+// fonction pour savoir si l'utilisateur peut valider une demande
+export async function isValidator() {
+    const userData = await getUserData();
+    if (!userData || !userData.roles) {
+        return false;
+    }
+    // Vérifier si l'utilisateur a le rôle approprié
+    return userData.roles.some(role => {
+        const roleName = role.name?.toLowerCase() || '';
+        return roleName.includes('validateur') || roleName.includes('validateur');
+    });
+}
+
+// fonction pour savoir si l'utilisateur est un conroleur de gestion
+export async function isController() {
+    const userData = await getUserData();
+    if (!userData || !userData.roles) {
+        return false;
+    }
+
+    // Vérifier si l'utilisateur a le rôle approprié
+    return userData.roles.some(role => {
+        const roleName = role.name?.toLowerCase() || '';
+        return roleName.includes('controleur') || roleName.includes('gestion');
+    });
+}
+
+// fonction pour savoir si l'utilisateur est un super admin
+export async function isSuperAdmin() {
+    const userData = await getUserData();
+    if (!userData || !userData.roles) {
+        return false;
+    }
+    // Vérifier si l'utilisateur a le rôle approprié
+    return userData.roles.some(role => {
+        const roleName = role.name?.toLowerCase() || '';
+        return roleName === 'super admin';
+    });
 }

@@ -99,9 +99,9 @@ export const api = {
     }
     
     const userData = sessionStorage.getItem('userData');
-    if (userData) {
-      return JSON.parse(userData);
-    }
+    // if (userData) {
+    //   return JSON.parse(userData);
+    // }
 
     try {
       const response = await this.request('/users/current-user', {
@@ -117,6 +117,131 @@ export const api = {
       return null;
     }
   },
+
+// ==================== DEMANDE ====================
+  async searchIntegrationRequests(searchData) {
+    if (VITE_MODE === 'DEV') {
+      return { data: data?.list_demande };
+    }
+    
+    try {
+      return await this.request('/requests', {
+        method: 'POST',
+        data: searchData,
+      });
+    } catch (error) {
+      console.error("Erreur searchIntegrationRequests:", error);
+      throw error;
+    }
+  },
+
+  async validIntegrationRequest(id) {
+    try {
+      return await this.request(`/requests/${id}`, {
+        method: 'PUT',
+      });
+    } catch (error) {
+      console.error("Erreur validIntegrationRequest:", error);
+      throw error;
+    }
+  },
+
+  async cancelIntegrationRequest(id) {
+    try {
+      const result = await Swal.fire({
+        title: "Êtes-vous sûr de vouloir annuler cette demande ?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Confirmer l'annulation",
+        confirmButtonColor: "red",
+        cancelButtonText: "Annuler",
+      });
+
+      if (result.isConfirmed) {
+        const response = await this.request(`/requests/cancel/${id}`, {
+          method: 'PUT',
+        });
+
+        if (response.status === 200) {
+          Swal.fire({
+            title: "Demande annulée",
+            text: "La demande a été annulée avec succès.",
+            icon: "success"
+          });
+          return true;
+        } else {
+          throw new Error("La demande n'a pas pu être annulée.");
+        }
+      }
+      return false;
+    } catch (error) {
+      Swal.fire({
+        title: "Erreur d'annulation",
+        text: error.message || "Une erreur est survenue lors de l'annulation.",
+        icon: "error"
+      });
+      throw error;
+    }
+  },
+
+  async processFile(file, fileType) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    if (VITE_MODE === 'DEV') {
+      return { data: data.processFile };
+    }
+
+    try {
+      return await axiosInstance.post(`/file/process-file?fileType=${fileType}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } catch (error) {
+      console.error("Erreur processFile:", error);
+      throw error;
+    }
+  },
+
+  async analyzeOperationFile(file, fileType) {
+    if (VITE_MODE === 'DEV') {
+      return { data: data.analyse };
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      return await axiosInstance.post(`/file/analyze-operation-file?fileType=${fileType}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } catch (error) {
+      console.error("Erreur analyzeOperationFile:", error);
+      throw error;
+    }
+  },
+
+  async getOperations(requestId, searchAccount = '', options = {}) {
+    if (VITE_MODE === 'DEV') {
+      return { data: data.listesOperation };
+    }
+    try {
+      return await this.request(`/operations/by-request/${requestId}`, {
+        method: 'GET',
+        params: {
+          account: searchAccount,
+          ...options
+        }
+      });
+    } catch (error) {
+      console.error("Erreur getOperations:", error);
+      throw error;
+    }
+  },
+
 
   // ==================== PROFILE MANAGEMENT ====================
   async getProfile(data) {
@@ -264,8 +389,6 @@ export const api = {
     }
   },
 
-
-
   async attributeRolesToUser(attributionData) {
     try {
       return await this.request('/users/assign-role', {
@@ -289,110 +412,5 @@ export const api = {
     }
   },
 
-  // ==================== INTEGRATION REQUESTS ====================
-  async searchIntegrationRequests(searchData) {
-    if (VITE_MODE === 'DEV') {
-      return { data: data?.list_demande };
-    }
-    
-    try {
-      return await this.request('/requests', {
-        method: 'POST',
-        data: searchData,
-      });
-    } catch (error) {
-      console.error("Erreur searchIntegrationRequests:", error);
-      throw error;
-    }
-  },
-
-  async validIntegrationRequest(id) {
-    try {
-      return await this.request(`/requests/${id}`, {
-        method: 'PUT',
-      });
-    } catch (error) {
-      console.error("Erreur validIntegrationRequest:", error);
-      throw error;
-    }
-  },
-
-  async cancelIntegrationRequest(id) {
-    try {
-      const result = await Swal.fire({
-        title: "Êtes-vous sûr de vouloir annuler cette demande ?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Confirmer l'annulation",
-        confirmButtonColor: "red",
-        cancelButtonText: "Annuler",
-      });
-
-      if (result.isConfirmed) {
-        const response = await this.request(`/requests/cancel/${id}`, {
-          method: 'PUT',
-        });
-
-        if (response.status === 200) {
-          Swal.fire({
-            title: "Demande annulée",
-            text: "La demande a été annulée avec succès.",
-            icon: "success"
-          });
-          return true;
-        } else {
-          throw new Error("La demande n'a pas pu être annulée.");
-        }
-      }
-      return false;
-    } catch (error) {
-      Swal.fire({
-        title: "Erreur d'annulation",
-        text: error.message || "Une erreur est survenue lors de l'annulation.",
-        icon: "error"
-      });
-      throw error;
-    }
-  },
-
-  // ==================== FILE OPERATIONS ====================
-  async processFile(file, fileType) {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    if (VITE_MODE === 'DEV') {
-      return { data: data.processFile };
-    }
-
-    try {
-      return await axiosInstance.post(`/file/process-file?fileType=${fileType}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    } catch (error) {
-      console.error("Erreur processFile:", error);
-      throw error;
-    }
-  },
-
-  async analyzeOperationFile(file, fileType) {
-    if (VITE_MODE === 'DEV') {
-      return { data: data.analyse };
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      return await axiosInstance.post(`/file/analyze-operation-file?fileType=${fileType}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    } catch (error) {
-      console.error("Erreur analyzeOperationFile:", error);
-      throw error;
-    }
-  }
+ 
 };

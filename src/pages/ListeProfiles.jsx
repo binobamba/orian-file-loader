@@ -2,10 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
-import {
-  BeautifulTable,
-  usePagination
-} from '../components/my-ui/Table';
+import { Table } from 'antd';
 import { Card } from '../components/my-ui/Card';
 
 function ListeProfiles() {
@@ -19,7 +16,6 @@ function ListeProfiles() {
 
   const [loading, setLoading] = useState(false);
   const [searchLibelle, setSearchLibelle] = useState('');
-  const pagination = usePagination(1, 10);
   
   // Références pour le debounce et le suivi des requêtes
   const timeoutRef = useRef(null);
@@ -30,14 +26,17 @@ function ListeProfiles() {
     
     setLoading(true);
     try {
+
       const response = await api.getProfile({
         code_: code || '',
         page_: page - 1, 
         size_: size
       });
+
       if (isMounted.current) {
         setProfilesData(response);
       }
+
     } catch (error) {
       if (isMounted.current) {
         console.error("Erreur lors du chargement des profils:", error);
@@ -52,11 +51,8 @@ function ListeProfiles() {
 
   const handleClearSearch = () => {
     setSearchLibelle('');
-    pagination.goToPage(1);
-  };
-
-  const handlePageChange = (page) => {
-    pagination.goToPage(page);
+    // Réinitialiser à la première page après effacement
+    fetchData('', 1, profilesData?.size);
   };
 
   // SEUL useEffect qui gère tout
@@ -70,7 +66,7 @@ function ListeProfiles() {
       }
       
       timeoutRef.current = setTimeout(() => {
-        fetchData(searchLibelle, pagination.currentPage, pagination.pageSize);
+        fetchData(searchLibelle, 1, profilesData?.size); // Toujours revenir à la page 1 lors d'une recherche
       }, 500);
     };
 
@@ -84,9 +80,38 @@ function ListeProfiles() {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [searchLibelle, pagination.currentPage, pagination.pageSize]);
+  }, [searchLibelle]); // Seulement searchLibelle déclenche le useEffect
+
+  // Gestion des changements de pagination et de taille de page
+  const handleTableChange = (pagination, filters, sorter) => {
+    fetchData(
+      searchLibelle, 
+      pagination.current, // Page actuelle (1-based)
+      pagination.pageSize // Taille de page
+    );
+  };
 
   const hasActiveFilters = searchLibelle;
+
+  // Configuration des colonnes pour Ant Design Table
+  const columns = [
+    {
+      title: 'Code',
+      dataIndex: 'code',
+      key: 'code',
+      align: 'left',
+      width: '30%',
+      render: (text) => <div className="font-medium">{text}</div>,
+    },
+    {
+      title: 'Libellé',
+      dataIndex: 'libelle',
+      key: 'libelle',
+      align: 'left',
+      width: '70%',
+      render: (text) => <div className="font-medium">{text}</div>,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-100 pr-5">
@@ -103,16 +128,9 @@ function ListeProfiles() {
               
               {/* Champ recherche Libellé du profil */}
               <div className="md:col-span-3 flex flex-col">
-                {/* <label
-                  htmlFor="profileLibelle"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-
-                </label> */}
-
                 <div className="flex gap-2 items-center">
                   {/* Champ de recherche réduit */}
-                  <div className="relative ">
+                  <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg
                         className="h-5 w-5 text-gray-400"
@@ -152,6 +170,17 @@ function ListeProfiles() {
                   )}
                 </div>
               </div>
+
+              {/* Informations sur les résultats */}
+              <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded">
+                {profilesData?.totalElements > 0 ? (
+                  <span>
+                    {profilesData?.numberOfElements} profil(s) sur {profilesData?.totalElements} total
+                  </span>
+                ) : (
+                  <span>Aucun profil</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -167,31 +196,34 @@ function ListeProfiles() {
                 </div>
               ) : (
                 <div className="h-full overflow-auto">
-                  <BeautifulTable
-                    headers={[
-                      { label: "Code", align: "left" },
-                      { label: "Libellé", align: "left" }
-                    ]}
-                    data={profilesData?.content}
-                    emptyMessage={hasActiveFilters ? "Aucun profil trouvé avec ce critère" : "Aucun profil trouvé"}
+                  <Table
+                    columns={columns}
+                    dataSource={profilesData?.content?.map(item => ({
+                      ...item,
+                      key: item.id // Assure que chaque ligne a une clé unique
+                    })) || []}
+                    loading={loading}
+                    bordered={true}
                     pagination={{
-                      currentPage: profilesData?.number + 1,
-                      totalPages: profilesData?.totalPages,
-                      totalElements: profilesData?.totalElements,
+                      current: profilesData?.number + 1, // Conversion 0-based → 1-based
                       pageSize: profilesData?.size,
-                      onPageChange: handlePageChange
+                      total: profilesData?.totalElements,
+                      showSizeChanger: true,
+                      showQuickJumper: true,
+                      showTotal: (total, range) => 
+                        `${range[0]}-${range[1]} sur ${total} profil(s)`,
+                      pageSizeOptions: ['5', '10', '20', '50'],
+                      position: ['bottomRight'],
                     }}
-                    renderRow={(profile) => (
-                      <tr key={profile.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="p-2 sm:p-3 text-left text-xs sm:text-sm">
-                          <div className="font-medium">{profile.code}</div>
-                        </td>
-                        <td className="p-2 sm:p-3 text-left text-xs sm:text-sm">
-                          <div className="font-medium">{profile.libelle}</div>
-                        </td>
-                      </tr>
-                    )}
-                    stickyHeader={true}
+                    onChange={handleTableChange}
+                    locale={{
+                      emptyText: hasActiveFilters 
+                        ? "Aucun profil trouvé avec ces critères de recherche" 
+                        : "Aucun profil disponible"
+                    }}
+                    scroll={{ x: 600 }}
+                    size="middle"
+                    rowClassName="hover:bg-gray-50 cursor-pointer"
                   />
                 </div>
               )}

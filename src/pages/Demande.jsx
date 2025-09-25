@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaEdit, FaPlus, FaSearch, FaTimes, FaRegTrashAlt, FaEye, FaRedo, FaDownload } from 'react-icons/fa';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
+
 import {
   Table,
   Button,
@@ -11,16 +12,26 @@ import {
   Select,
   DatePicker,
   Tag,
+  Spin,
 } from 'antd';
+
 import moment from 'moment';
 import 'moment/locale/fr';
 import { Card } from '../components/my-ui/Card';
 import { showValidationModal } from '../components/my-ui/showValidationModal';
 import { showDemandeForm } from '../components/my-ui/showDemandeForm';
-import {showOperationsModalWithPagination} from '../components/my-ui/showOperationsModalWithPagination';
+import { showOperationsModalWithPagination } from '../components/my-ui/showOperationsModalWithPagination';
 
 const { Option } = Select;
-const { RangePicker } = DatePicker;
+
+// Suppression de l'alerte de compatibilité Antd
+const originalError = console.error;
+console.error = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('antd: compatible')) {
+    return;
+  }
+  originalError.call(console, ...args);
+};
 
 export default function Demande() {
   const [data, setData] = useState({
@@ -33,46 +44,31 @@ export default function Demande() {
   const [loading, setLoading] = useState(false);
   const [demandeurs, setDemandeurs] = useState([]);
   const [demandeursLoading, setDemandeursLoading] = useState(false);
+  const [downloadingIds, setDownloadingIds] = useState(new Set());
+
   const navigate = useNavigate();
 
   // États pour les champs de recherche
   const [searchReference, setSearchReference] = useState('');
   const [searchOperationStatus, setSearchOperationStatus] = useState('');
   const [searchCreatedById, setSearchCreatedById] = useState('');
+  const [searchDemandeurText, setSearchDemandeurText] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isClearing, setIsClearing] = useState(false);
-  const [hoverStates, setHoverStates] = useState({
-    clearButton: false,
-    referenceInput: false,
-    statusSelect: false,
-    demandeurSelect: false,
-    startDate: false,
-    endDate: false
-  });
+
   const isMounted = useRef(true);
 
-  // Gestionnaires d'états de survol
-  const handleMouseEnter = (element) => {
-    setHoverStates(prev => ({ ...prev, [element]: true }));
-  };
-
-  const handleMouseLeave = (element) => {
-    setHoverStates(prev => ({ ...prev, [element]: false }));
-  };
-
-  // Charger la liste des demandeurs
+  // Charger la liste des demandeurs avec recherche
   const fetchDemandeurs = useCallback(async (searchQuery = '') => {
     if (!isMounted.current) return;
-    console.log("Actualisation de la liste des demandeurs",)
     try {
       setDemandeursLoading(true);
       const response = await api.searchUsers({ text: searchQuery });
-      const responseData = response.data || [] ;
-      
+      const responseData = response.data || [];
       setDemandeurs(responseData?.content || []);
     } catch (error) {
       console.error('Erreur lors du chargement des demandeurs:', error);
@@ -92,9 +88,8 @@ export default function Demande() {
     return statusConfigs[status] || { label: status, color: 'default' };
   };
 
-  const fetchDemandeData = useCallback(async (page = 1, pageSize = 10, filters = {}) => {
+  const fetchDemandeData = useCallback(async (page = 1, size = 10, filters = {}) => {
     if (!isMounted.current) return;
-    
     try {
       setLoading(true);
       const searchData = {
@@ -104,9 +99,9 @@ export default function Demande() {
         startDate: filters.startDate || null,
         endDate: filters.endDate || null,
         page: page - 1,
-        size: pageSize
+        size: size
       };
-
+      
       const response = await api.searchIntegrationRequests(searchData);
       const responseData = response.data || response;
 
@@ -132,17 +127,23 @@ export default function Demande() {
   }, []);
 
   const formatAmount = (amount) => {
+    if (amount === null || amount === undefined) return '-';
     return new Intl.NumberFormat('fr-FR').format(amount);
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return '-';
+    try {
+      return new Date(dateString).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return '-';
+    }
   };
 
   const showModalValidation = (demandeData) => {
@@ -157,8 +158,82 @@ export default function Demande() {
     });
   };
 
-  const VisualiserDemande = async (demande) => {
-    showOperationsModalWithPagination(demande.operations || []);
+  const VisualiserDemande = async (demandeId) => {
+    showOperationsModalWithPagination(demandeId);
+  };
+
+  const TelechargerDemande = async (demande) => {
+    if (!demande?.id) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'error',
+        title: 'Erreur: ID de demande manquant',
+        showConfirmButton: false,
+        timer: 3000
+      });
+      return;
+    }
+
+    setDownloadingIds(prev => new Set(prev).add(demande.id));
+    
+    try {
+      const response = await api.downloadDemande(demande.id);
+      
+      if (response && response.data) {
+        const blob = new Blob([response.data], { 
+          type: response.headers['content-type'] || 'application/pdf' 
+        });
+        
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const fileName = `demande_${demande.reference || demande.id}.pdf`;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Document téléchargé avec succès',
+          showConfirmButton: false,
+          timer: 2000
+        });
+      } else {
+        throw new Error('Aucune donnée reçue du serveur');
+      }
+      
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      
+      let errorMessage = 'Erreur lors du téléchargement';
+      if (error.response?.status === 404) {
+        errorMessage = 'Document non trouvé';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Accès non autorisé';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'error',
+        title: errorMessage,
+        showConfirmButton: false,
+        timer: 3000
+      });
+    } finally {
+      setDownloadingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(demande.id);
+        return newSet;
+      });
+    }
   };
 
   const DeleteDemande = async (demande) => {
@@ -221,9 +296,12 @@ export default function Demande() {
     setSearchReference('');
     setSearchOperationStatus('');
     setSearchCreatedById('');
+    setSearchDemandeurText('');
     setStartDate('');
     setEndDate('');
     setCurrentPage(1);
+    
+    fetchDemandeData(1, pageSize, {});
     
     setTimeout(() => {
       setIsClearing(false);
@@ -231,8 +309,19 @@ export default function Demande() {
   };
 
   const handleTableChange = (pagination, filters, sorter) => {
-    setCurrentPage(pagination.current);
-    setPageSize(pagination.pageSize);
+    const newPage = pagination.current;
+    const newPageSize = pagination.pageSize;
+    
+    setCurrentPage(newPage);
+    setPageSize(newPageSize);
+    
+    fetchDemandeData(newPage, newPageSize, {
+      reference: searchReference,
+      operationStatus: searchOperationStatus,
+      createdById: searchCreatedById,
+      startDate: startDate,
+      endDate: endDate
+    });
   };
 
   // Fonction de debounce
@@ -258,18 +347,32 @@ export default function Demande() {
   const debouncedSearchCreatedById = useDebounce(searchCreatedById, 500);
   const debouncedStartDate = useDebounce(startDate, 500);
   const debouncedEndDate = useDebounce(endDate, 500);
+  const debouncedSearchDemandeurText = useDebounce(searchDemandeurText, 500);
 
-  // Effect pour les requêtes
+  // Effect pour le chargement initial
   useEffect(() => {
     if (isMounted.current) {
-      fetchDemandeData(currentPage, pageSize, {
+      fetchDemandeData(1, pageSize, {});
+      fetchDemandeurs('');
+    }
+
+    return () => {
+      isMounted.current = false;
+      console.error = originalError;
+    };
+  }, []);
+
+  // Effect pour les filtres de recherche
+  useEffect(() => {
+    if (isMounted.current) {
+      setCurrentPage(1);
+      fetchDemandeData(1, pageSize, {
         reference: debouncedSearchReference,
         operationStatus: debouncedSearchOperationStatus,
         createdById: debouncedSearchCreatedById,
         startDate: debouncedStartDate,
         endDate: debouncedEndDate
       });
-      fetchDemandeurs('');
     }
   }, [
     debouncedSearchReference,
@@ -277,20 +380,41 @@ export default function Demande() {
     debouncedSearchCreatedById,
     debouncedStartDate,
     debouncedEndDate,
-    currentPage,
-    pageSize,
-    fetchDemandeData,
-    fetchDemandeurs
+    pageSize
   ]);
 
-  // Nettoyage du composant
+  // Effect pour la recherche de demandeurs
   useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+    if (isMounted.current && debouncedSearchDemandeurText !== undefined) {
+      fetchDemandeurs(debouncedSearchDemandeurText);
+    }
+  }, [debouncedSearchDemandeurText, fetchDemandeurs]);
+
+  // Gestionnaire pour la sélection d'un demandeur
+  const handleDemandeurSelect = (value) => {
+    setSearchCreatedById(value);
+    const selectedDemandeur = demandeurs.find(d => d.id === value);
+    if (selectedDemandeur) {
+      setSearchDemandeurText(`${selectedDemandeur.firstName} ${selectedDemandeur.lastName} (${selectedDemandeur.matricule})`);
+    } else if (!value) {
+      setSearchDemandeurText('');
+    }
+  };
+
+  // Gestionnaire pour la recherche de demandeurs
+  const handleDemandeurSearch = (value) => {
+    setSearchDemandeurText(value);
+    if (!value) {
+      setSearchCreatedById('');
+    }
+  };
 
   const hasActiveFilters = searchReference || searchOperationStatus || searchCreatedById || startDate || endDate;
+
+  // Fonction cruciale pour les filtres dans le modal
+  const getPopupContainer = () => {
+    return document.querySelector('.swal2-popup') || document.body;
+  };
 
   // Configuration des colonnes pour le tableau
   const columns = [
@@ -301,7 +425,7 @@ export default function Demande() {
       align: 'left',
       render: (text) => (
         <div className="whitespace-nowrap overflow-hidden text-ellipsis w-full" title={text}>
-          {text}
+          {text || '-'}
         </div>
       ),
     },
@@ -379,16 +503,15 @@ export default function Demande() {
       dataIndex: 'createdAt',
       key: 'createdAt',
       align: 'center',
-      render: (date) => <span className="whitespace-nowrap">{date ? formatDate(date) : '-'}</span>
+      render: (date) => <span className="whitespace-nowrap">{formatDate(date)}</span>
     },
-     {
+    {
       title: "ACTIONS",
       key: "actions",
       align: "center",
       fixed: "right",
       render: (record) => (
         <div className="flex items-center justify-center gap-1 whitespace-nowrap">
-          {/* Bouton Valider */}
           <button
             onClick={() => showModalValidation(record)}
             title="Valider"
@@ -398,19 +521,17 @@ export default function Demande() {
             <FaEdit className="text-lg" />
           </button>
 
-          {/* Bouton Supprimer */}
           <button
             onClick={() => DeleteDemande(record)}
             title="ANNULER"
             aria-label="ANNULER"
-            className="p-1 rounded-full text-orange-600 hover:text-white hover:bg-orange-600 dark:text-green-400 dark:hover:text-green-300 transition-colors"
+            className="p-1 rounded-full text-orange-600 hover:text-white hover:bg-orange-600 transition-colors"
           >
             <FaRegTrashAlt className="text-lg" />
           </button>
 
-          {/* Bouton Visualiser */}
           <button
-            onClick={() => VisualiserDemande(record)}
+            onClick={() => VisualiserDemande(record.id)}
             title="Visualiser les opérations"
             aria-label="Visualiser les opérations"
             className="p-1 rounded-full hover:bg-orange-600 text-green-800 transition hover:text-white"
@@ -418,25 +539,30 @@ export default function Demande() {
             <FaEye className="text-lg" />
           </button>
 
-          
-          {/* Bouton Visualiser */}
           <button
-            onClick={() => VisualiserDemande(record)}
-            title="Télécharger"
-            aria-label="Télécharger"
-            className="p-1 rounded-full hover:bg-orange-600 text-gray-600 transition hover:text-white"
+            onClick={() => TelechargerDemande(record)}
+            title="Télécharger le document"
+            aria-label="Télécharger le document"
+            disabled={downloadingIds.has(record.id)}
+            className={`p-1 rounded-full transition ${
+              downloadingIds.has(record.id) 
+                ? 'bg-gray-300 cursor-not-allowed' 
+                : 'hover:bg-orange-600 text-gray-600 hover:text-white'
+            }`}
           >
-            <FaDownload className="text-lg" />
+            {downloadingIds.has(record.id) ? (
+              <Spin size="small" />
+            ) : (
+              <FaDownload className="text-lg" />
+            )}
           </button>
-
-
         </div>
       ),
     }
   ];
 
   return (
-    <div className="w-full no-scrollbar">
+    <div className="w-full no-scrollbar mr-10">
       <Card
         title="GESTION DES DEMANDES"
         buttonText="Nouvelle demande"
@@ -448,58 +574,53 @@ export default function Demande() {
           <div className="sticky top-0 bg-white z-10 pb-2 border-b border-gray-200 shadow-sm">
             <div className="relative">
               <div className="overflow-x-auto">
-                {/* Grille des filtres avec Tailwind CSS */}
                 <div className="grid grid-cols-6 gap-4 items-end min-w-[1100px]">
+                  
                   {/* Bouton de réinitialisation */}
                   <div className="flex flex-col">
-                    <label htmlFor="reset" className="block text-xs font-bold text-gray-800 mb-1 justify-center ">
+                    <label htmlFor="reset" className="block text-sm font-medium text-gray-700 mb-1">
                       EFFACER
                     </label>
                     <Button
-                      id="reset"
-                      type="default"
-                      size="default"
                       onClick={handleClearSearch}
-                      onMouseEnter={() => handleMouseEnter("clearButton")}
-                      onMouseLeave={() => handleMouseLeave("clearButton")}
-                      className="w-full flex items-center justify-center rounded-lg 
-                                hover:bg-red-500 hover:text-white transition-all duration-300"
-                      title="Réinitialiser tous les filtres"
+                      className="green-2"
                       disabled={isClearing}
-                      icon={<FaRedo className="text-lg" />}
-                    />
+                    >
+                      {isClearing ? <Spin size="small" /> : 'Effacer'}
+                    </Button>
                   </div>
 
                   {/* Champ référence */}
                   <div className="flex flex-col">
-                    <label htmlFor="reference" className="block text-xs font-bold text-gray-800 mb-1 text-center">
-                      REFERENCE
+                    <label htmlFor="reference" className="block text-sm font-medium text-gray-700 mb-1">
+                      RÉFÉRENCE
                     </label>
-                    <Input
-                      id="reference"
-                      placeholder="Référence"
-                      size="default"
-                      value={searchReference}
-                      onChange={(e) => setSearchReference(e.target.value)}
-                      prefix={<FaSearch className="text-gray-400" />}
-                      className="rounded-lg"
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FaSearch className="text-gray-400" />
+                      </div>
+                      <Input
+                        id="reference"
+                        placeholder="Référence"
+                        value={searchReference}
+                        onChange={(e) => setSearchReference(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
 
                   {/* Champ statut opération */}
                   <div className="flex flex-col">
-                    <label htmlFor="operationStatus" className="block text-xs font-bold text-gray-800 mb-1 text-center">
+                    <label htmlFor="operationStatus" className="block text-sm font-medium text-gray-700 mb-1">
                       STATUT OPÉRATION
                     </label>
                     <Select
                       id="operationStatus"
-                      value={searchOperationStatus || undefined}
+                      value={searchOperationStatus}
                       onChange={setSearchOperationStatus}
                       placeholder="TOUS LES STATUTS"
-                      size="default"
-                      className="w-full rounded-lg"
+                      allowClear
                     >
-                      <Option value="">TOUS LES STATUTS</Option>
                       <Option value="VALIDEE">VALIDEE</Option>
                       <Option value="NON_VALIDEE">NON VALIDEE</Option>
                       <Option value="EN_TRAITEMENT">EN TRAITEMENT</Option>
@@ -508,59 +629,68 @@ export default function Demande() {
 
                   {/* Champ Demandeur */}
                   <div className="flex flex-col">
-                    <label htmlFor="demandeur" className="block text-xs font-bold text-gray-800 mb-1 text-center">
+                    <label htmlFor="demandeur" className="block text-sm font-medium text-gray-700 mb-1">
                       DEMANDEUR
                     </label>
-                    <Select
-                      id="demandeur"
-                      value={searchCreatedById || undefined}
-                      showSearch
-                      optionFilterProp="children"
-                      onFocus={() => fetchDemandeurs('')}
-                      onChange={setSearchCreatedById}
-                      placeholder="Sélectionner un demandeur"
-                      loading={demandeursLoading}
-                      size="default"
-                      className="w-full rounded-lg"
-                    >
-                      <Option value="">Sélectionner un demandeur</Option>
-                      {demandeurs?.map((demandeur) => (
-                        <Option key={demandeur.id} value={demandeur.id}>
-                          {`${demandeur.firstName} ${demandeur.lastName} (${demandeur.matricule})`}
-                        </Option>
-                      ))}
-                    </Select>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                        <FaSearch className="text-gray-400" />
+                      </div>
+                      <Select
+                        id="demandeur"
+                        showSearch
+                        allowClear
+                        placeholder="Rechercher un demandeur"
+                        value={searchCreatedById || undefined}
+                        onSelect={handleDemandeurSelect}
+                        onSearch={handleDemandeurSearch}
+                        onClear={() => {
+                          setSearchCreatedById('');
+                          setSearchDemandeurText('');
+                        }}
+                        loading={demandeursLoading}
+                        filterOption={false}
+                        notFoundContent={demandeursLoading ? 'Chargement...' : 'Aucun demandeur trouvé'}
+                        className="w-full"
+                        style={{ paddingLeft: '2.5rem' }}
+                        getPopupContainer={getPopupContainer}
+                      >
+                        {demandeurs?.map((demandeur) => (
+                          <Option key={demandeur.id} value={demandeur.id}>
+                            {`${demandeur.firstName} ${demandeur.lastName} (${demandeur.matricule})`}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
                   </div>
 
                   {/* Champ date de début */}
                   <div className="flex flex-col">
-                    <label htmlFor="startDate" className="block text-xs font-bold text-gray-800 mb-1 text-center">
+                    <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
                       DATE DE DÉBUT
                     </label>
-                    <DatePicker
+                    <Input
+                      type="date"
                       id="startDate"
-                      value={startDate ? moment(startDate) : null}
-                      onChange={(date, dateString) => setStartDate(dateString)}
-                      size="default"
-                      className="w-full rounded-lg"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
                     />
                   </div>
 
                   {/* Champ date de fin */}
                   <div className="flex flex-col">
-                    <label htmlFor="endDate" className="block text-xs font-bold text-gray-800 mb-1 text-center">
+                    <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
                       DATE DE FIN
                     </label>
-                    <DatePicker
+                    <Input
+                      type="date"
                       id="endDate"
-                      value={endDate ? moment(endDate) : null}
-                      onChange={(date, dateString) => setEndDate(dateString)}
-                      size="default"
-                      className="w-full rounded-lg"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
                     />
                   </div>
-                </div>
 
+                </div>
               </div>
             </div>
           </div>
@@ -570,10 +700,8 @@ export default function Demande() {
             <div className="flex-1 overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="animate-spin w-12 h-12 border-3 border-gray-200 border-t-orange-600 rounded-full mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Chargement...</p>
-                  </div>
+                  <Spin size="large" />
+                  <p className="mt-2 text-gray-600">Chargement...</p>
                 </div>
               ) : (
                 <Table
@@ -581,8 +709,8 @@ export default function Demande() {
                   dataSource={data.content}
                   rowKey="id"
                   loading={loading}
-                  scroll={{ x: 1300, y: '60vh' }}
-                  size="small"
+                  scroll={{ x: 1600, y: '57vh' }}
+                  size="middle"
                   bordered={true}
                   pagination={{
                     current: currentPage,
@@ -591,8 +719,10 @@ export default function Demande() {
                     showSizeChanger: true,
                     showQuickJumper: true,
                     showTotal: (total, range) => `${range[0]}-${range[1]} sur ${total} demandes`,
+                    pageSizeOptions: ['10', '20', '50', '100'],
                   }}
                   onChange={handleTableChange}
+                  getPopupContainer={getPopupContainer}
                   locale={{
                     emptyText: hasActiveFilters 
                       ? "Aucune demande trouvée avec ces critères" 

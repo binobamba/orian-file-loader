@@ -31,7 +31,7 @@
                     "roles": [
                         {
                             "role_id": 1,
-                            "name": "super admin",
+                            "name": "Administrateur",
                             "editable": true,
                             "profiles": [
                                 {
@@ -799,7 +799,6 @@
           "validatedBy": null
         }
       ],
-
       "pageable": {
         "pageNumber": 0,
         "pageSize": 10,
@@ -842,7 +841,7 @@
     },
 
     
-    "users":{
+  "users":{
       "totalPages": 2,
       "totalElements": 15,
       "size": 10,
@@ -1160,6 +1159,84 @@
     "paged": false
   },
   "empty": true
+}
+,
+"listesOperation":{
+  "totalElements": 3,
+  "totalPages": 1,
+  "size": 3,
+  "content": [
+    {
+      "id": "a1f85f64-5717-4562-b3fc-2c963f66af01",
+      "libelle": "Paiement facture électricité",
+      "name": "CIE",
+      "reference": "REF-EL-2025092501",
+      "account": "225100200300",
+      "amount": 45000.75,
+      "operationDate": "2025-09-25",
+      "valueDate": "2025-09-25",
+      "noOper": "OP-1001",
+      "accountIsValid": true,
+      "createdAt": "2025-09-25T08:30:00.000Z",
+      "signature": "SIG-USER-01",
+      "debit": true,
+      "credit": false
+    },
+    {
+      "id": "b2f85f64-5717-4562-b3fc-2c963f66af02",
+      "libelle": "Virement salaire",
+      "name": "Société XYZ",
+      "reference": "REF-SA-2025092502",
+      "account": "225400500600",
+      "amount": 250000.00,
+      "operationDate": "2025-09-25",
+      "valueDate": "2025-09-26",
+      "noOper": "OP-1002",
+      "accountIsValid": true,
+      "createdAt": "2025-09-25T09:00:00.000Z",
+      "signature": "SIG-USER-02",
+      "debit": false,
+      "credit": true
+    },
+    {
+      "id": "c3f85f64-5717-4562-b3fc-2c963f66af03",
+      "libelle": "Achat supermarché",
+      "name": "Carrefour Abidjan",
+      "reference": "REF-ACH-2025092503",
+      "account": "225700800900",
+      "amount": 75200.40,
+      "operationDate": "2025-09-24",
+      "valueDate": "2025-09-25",
+      "noOper": "OP-1003",
+      "accountIsValid": false,
+      "createdAt": "2025-09-25T10:15:00.000Z",
+      "signature": "SIG-USER-03",
+      "debit": true,
+      "credit": false
+    }
+  ],
+  "number": 0,
+  "sort": {
+    "empty": false,
+    "sorted": true,
+    "unsorted": false
+  },
+  "numberOfElements": 3,
+  "first": true,
+  "last": true,
+  "pageable": {
+    "offset": 0,
+    "sort": {
+      "empty": false,
+      "sorted": true,
+      "unsorted": false
+    },
+    "paged": true,
+    "pageSize": 3,
+    "pageNumber": 0,
+    "unpaged": false
+  },
+  "empty": false
 }
 
 
