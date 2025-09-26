@@ -3,28 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { FaEdit, FaPlus, FaSearch, FaTimes, FaRegTrashAlt, FaEye, FaRedo, FaDownload } from 'react-icons/fa';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
-
+import { isAdmin,isValidator } from '../services/permission.js';
 import {
   Table,
   Button,
   Card as AntCard,
   Input,
   Select,
-  DatePicker,
   Tag,
+  DatePicker,
   Spin,
 } from 'antd';
-
-import moment from 'moment';
+    import { ExclamationCircleOutlined } from '@ant-design/icons';
 import 'moment/locale/fr';
 import { Card } from '../components/my-ui/Card';
 import { showValidationModal } from '../components/my-ui/showValidationModal';
 import { showDemandeForm } from '../components/my-ui/showDemandeForm';
 import { showOperationsModalWithPagination } from '../components/my-ui/showOperationsModalWithPagination';
-
+import { formatAmount, formatDate } from '../utils/Utils.js';
 const { Option } = Select;
 
-// Suppression de l'alerte de compatibilité Antd
 const originalError = console.error;
 console.error = (...args) => {
   if (typeof args[0] === 'string' && args[0].includes('antd: compatible')) {
@@ -34,49 +32,31 @@ console.error = (...args) => {
 };
 
 export default function Demande() {
-  const [data, setData] = useState({
-    content: [],
-    totalPages: 0,
-    totalElements: 0,
-    number: 0,
-    size: 10
-  });
+
+  // Etats pour le chargement
   const [loading, setLoading] = useState(false);
-  const [demandeurs, setDemandeurs] = useState([]);
   const [demandeursLoading, setDemandeursLoading] = useState(false);
   const [downloadingIds, setDownloadingIds] = useState(new Set());
+  const [isClearing, setIsClearing] = useState(false);
 
-  const navigate = useNavigate();
 
   // États pour les champs de recherche
-  const [searchReference, setSearchReference] = useState('');
   const [searchOperationStatus, setSearchOperationStatus] = useState('');
   const [searchCreatedById, setSearchCreatedById] = useState('');
-  const [searchDemandeurText, setSearchDemandeurText] = useState('');
+  const [searchDemandeurFirstName, setSearchDemandeurFirstName] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [isClearing, setIsClearing] = useState(false);
+  // États pour la pagination 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [numberOfElements, setNumberOfElements] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
 
-  const isMounted = useRef(true);
-
-  // Charger la liste des demandeurs avec recherche
-  const fetchDemandeurs = useCallback(async (searchQuery = '') => {
-    if (!isMounted.current) return;
-    try {
-      setDemandeursLoading(true);
-      const response = await api.searchUsers({ text: searchQuery });
-      const responseData = response.data || [];
-      setDemandeurs(responseData?.content || []);
-    } catch (error) {
-      console.error('Erreur lors du chargement des demandeurs:', error);
-      setDemandeurs([]);
-    } finally {
-      setDemandeursLoading(false);
-    }
-  }, []);
+    // État pour les données
+    const [DemandeData, setDemandeData] = useState([]);
+    const [demandeursData, setDemandeursData] = useState([]);
 
   // Configuration des statuts
   const getStatusConfig = (status) => {
@@ -90,73 +70,63 @@ export default function Demande() {
     return statusConfigs[status] || { label: status, color: 'default' };
   };
 
-  const fetchDemandeData = useCallback(async (page = 1, size = 10, filters = {}) => {
-    if (!isMounted.current) return;
-    try {
-      setLoading(true);
-      const searchData = {
-        reference: filters.reference || '',
-        operationStatus: filters.operationStatus || '',
-        createdById: filters.createdById || null,
-        startDate: filters.startDate || null,
-        endDate: filters.endDate || null,
-        page: page - 1,
-        size: size
-      };
-      
-      const response = await api.searchIntegrationRequests(searchData);
-      const responseData = response.data || response;
+  const operationStatusOptions = [
+  { value: "VALIDEE", label: "VALIDEE" },
+  { value: "NON_VALIDEE", label: "NON VALIDEE" },
+  { value: "EN_TRAITEMENT", label: "EN TRAITEMENT" },
+];
+  // Fonction pour récupérer les demandes
 
-      setData({
-        content: responseData.content || [],
-        totalPages: responseData.totalPages || 0,
-        totalElements: responseData.totalElements || 0,
-        number: responseData.number || 0,
-        size: responseData.size || 10
+  const fetchDemandeData = async () => {
+    console.log('récupération des données de la demande ?')
+    setLoading(true);
+    try {
+      const response = await api.searchIntegrationRequests({
+        operationStatus: searchOperationStatus || '',
+        createdById: searchCreatedById || '',
+        startDate: startDate || '',
+        endDate: endDate || '',
+        page: currentPage,
+        size: pageSize
       });
+
+      const responseData = response?.data || [];
+      setNumberOfElements(responseData.numberOfElements || 0);
+      setTotalElements(responseData.totalElements || 0);
+      setTotalPages(responseData.totalPages || 1);
+      setDemandeData(responseData.content)
+
     } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
-      setData({
-        content: [],
-        totalPages: 0,
-        totalElements: 0,
-        number: 0,
-        size: 10
-      });
+      console.error('Erreur lors du chargement des demandes:', error);
+      setDemandeData([]);
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const formatAmount = (amount) => {
-    if (amount === null || amount === undefined) return '-';
-    return new Intl.NumberFormat('fr-FR').format(amount);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
+  // Fonction pour récupérer les demandeurs
+  const fetchDemandeurs = async () => {
+    console.log('chargement des demandeurs')
+    setDemandeursLoading(true);
     try {
-      return new Date(dateString).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      const response = await api.getUsers({
+        firstName: searchDemandeurFirstName || '',
+        page: 0,
+        size: 50
       });
+      const demandeursData = response?.data.content || [];
+      setDemandeursData(demandeursData);
     } catch (error) {
-      return '-';
+      console.error('Erreur lors du chargement des demandeurs:', error);
+      setDemandeursData([]);
+    } finally {
+      setDemandeursLoading(false);
     }
   };
 
   const showModalValidation = (demandeData) => {
     showValidationModal(demandeData, (demandeId) => {
-      fetchDemandeData(currentPage, pageSize, {
-        reference: searchReference,
-        operationStatus: searchOperationStatus,
-        createdById: searchCreatedById,
-        startDate: startDate,
-        endDate: endDate
-      });
+      fetchDemandeData();
     });
   };
 
@@ -211,7 +181,6 @@ export default function Demande() {
       
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error);
-      
       let errorMessage = 'Erreur lors du téléchargement';
       if (error.response?.status === 404) {
         errorMessage = 'Document non trouvé';
@@ -295,273 +264,227 @@ export default function Demande() {
 
   const handleClearSearch = () => {
     setIsClearing(true);
-    setSearchReference('');
     setSearchOperationStatus('');
     setSearchCreatedById('');
-    setSearchDemandeurText('');
+    setSearchDemandeurFirstName('');
     setStartDate('');
     setEndDate('');
     setCurrentPage(1);
-    
-    fetchDemandeData(1, pageSize, {});
-    
+    setPageSize(10);
+    fetchDemandeData();
     setTimeout(() => {
       setIsClearing(false);
     }, 500);
   };
 
-  const handleTableChange = (pagination, filters, sorter) => {
-    const newPage = pagination.current;
-    const newPageSize = pagination.pageSize;
-    
-    setCurrentPage(newPage);
-    setPageSize(newPageSize);
-    
-    fetchDemandeData(newPage, newPageSize, {
-      reference: searchReference,
-      operationStatus: searchOperationStatus,
-      createdById: searchCreatedById,
-      startDate: startDate,
-      endDate: endDate
-    });
+  const handleTableChange = (pagination) => {
+    setCurrentPage(pagination.current);
+    setPageSize(pagination.pageSize);
+    fetchDemandeData();
   };
 
-  // Fonction de debounce
-  const useDebounce = (value, delay) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    
-    useEffect(() => {
-      const handler = setTimeout(() => {
-        setDebouncedValue(value);
-      }, delay);
-      
-      return () => {
-        clearTimeout(handler);
-      };
-    }, [value, delay]);
-    
-    return debouncedValue;
-  };
-
-  // Utilisation du debounce pour les champs de recherche
-  const debouncedSearchReference = useDebounce(searchReference, 500);
-  const debouncedSearchOperationStatus = useDebounce(searchOperationStatus, 500);
-  const debouncedSearchCreatedById = useDebounce(searchCreatedById, 500);
-  const debouncedStartDate = useDebounce(startDate, 500);
-  const debouncedEndDate = useDebounce(endDate, 500);
-  const debouncedSearchDemandeurText = useDebounce(searchDemandeurText, 500);
-
-  // Effect pour le chargement initial
   useEffect(() => {
-    if (isMounted.current) {
-      fetchDemandeData(1, pageSize, {});
-      fetchDemandeurs('');
-    }
-
-    return () => {
-      isMounted.current = false;
-      console.error = originalError;
-    };
-  }, []);
-
-  // Effect pour les filtres de recherche
-  useEffect(() => {
-    if (isMounted.current) {
-      setCurrentPage(1);
-      fetchDemandeData(1, pageSize, {
-        reference: debouncedSearchReference,
-        operationStatus: debouncedSearchOperationStatus,
-        createdById: debouncedSearchCreatedById,
-        startDate: debouncedStartDate,
-        endDate: debouncedEndDate
-      });
-    }
-  }, [
-    debouncedSearchReference,
-    debouncedSearchOperationStatus,
-    debouncedSearchCreatedById,
-    debouncedStartDate,
-    debouncedEndDate,
-    pageSize
-  ]);
-
-  // Effect pour la recherche de demandeurs
-  useEffect(() => {
-    if (isMounted.current && debouncedSearchDemandeurText !== undefined) {
-      fetchDemandeurs(debouncedSearchDemandeurText);
-    }
-  }, [debouncedSearchDemandeurText, fetchDemandeurs]);
-
-  // Gestionnaire pour la sélection d'un demandeur
-  const handleDemandeurSelect = (value) => {
-    setSearchCreatedById(value);
-    const selectedDemandeur = demandeurs.find(d => d.id === value);
-    if (selectedDemandeur) {
-      setSearchDemandeurText(`${selectedDemandeur.firstName} ${selectedDemandeur.lastName} (${selectedDemandeur.matricule})`);
-    } else if (!value) {
-      setSearchDemandeurText('');
-    }
-  };
+    fetchDemandeData();
+  }, [currentPage, pageSize,searchOperationStatus, searchCreatedById, startDate, endDate]);
+ 
+  useEffect(()=>{
+    fetchDemandeurs();
+  }, [searchDemandeurFirstName])
 
   // Gestionnaire pour la recherche de demandeurs
   const handleDemandeurSearch = (value) => {
-    setSearchDemandeurText(value);
-    if (!value) {
-      setSearchCreatedById('');
-    }
-  };
-
-  const hasActiveFilters = searchReference || searchOperationStatus || searchCreatedById || startDate || endDate;
-
-  // Fonction cruciale pour les filtres dans le modal
-  const getPopupContainer = () => {
-    return document.querySelector('.swal2-popup') || document.body;
+    setSearchDemandeurFirstName(value);
+    fetchDemandeurs();
   };
 
   // Configuration des colonnes pour le tableau
-  const columns = [
-    {
-      title: 'RÉFÉRENCE',
-      dataIndex: 'reference',
-      key: 'reference',
-      align: 'left',
-      render: (text) => (
-        <div className="whitespace-nowrap overflow-hidden text-ellipsis w-full" title={text}>
-          {text || '-'}
-        </div>
-      ),
-    },
-    {
-      title: 'DÉBIT',
-      dataIndex: 'debitAmount',
-      key: 'debitAmount',
-      align: 'center',
-      render: (amount) => <span className="whitespace-nowrap">{formatAmount(amount)}</span>
-    },
-    {
-      title: 'CRÉDIT',
-      dataIndex: 'creditAmount',
-      key: 'creditAmount',
-      align: 'center',
-      render: (amount) => <span className="whitespace-nowrap">{formatAmount(amount)}</span>
-    },
-    {
-      title: 'ÉQUILIBRE',
-      dataIndex: 'equilibre',
-      key: 'isbalanced',
-      align: 'center',
-      render: (amount) => <span className="whitespace-nowrap">{formatAmount(amount)}</span>
-    },
-    {
-      title: 'INTÉGRATION',
-      dataIndex: 'integrationStatus',
-      key: 'integrationStatus',
-      align: 'center',
-      render: (status) => {
-        const config = getStatusConfig(status);
-        return <Tag color={config.color} className="whitespace-nowrap">{config.label}</Tag>;
-      }
-    },
-    {
-      title: 'OPÉRATION',
-      dataIndex: 'operationStatus',
-      key: 'operationStatus',
-      align: 'center',
-      render: (status) => {
-        const config = getStatusConfig(status);
-        return <Tag color={config.color} className="whitespace-nowrap">{config.label}</Tag>;
-      }
-    },
-    {
-      title: 'DEMANDEUR',
-      key: 'createdBy',
-      align: 'center',
-      render: (record) => (
-        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-          {record.createdBy ? (
-            <span title={`${record.createdBy.firstName} ${record.createdBy.lastName} (${record.createdBy.matricule})`}>
-              {record.createdBy.firstName} {record.createdBy.lastName} ({record.createdBy.matricule})
-            </span>
-          ) : 'N/A'}
-        </div>
-      )
-    },
-    {
-      title: 'VALIDÉ PAR',
-      key: 'validatedBy',
-      align: 'center',
-      render: (record) => (
-        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-          {record.validatedBy ? (
-            <>
-              {record.validatedBy.firstName} {record.validatedBy.lastName} ({record.validatedBy.matricule})
-            </>
-          ) : 'N/A'}
-        </div>
-      )
-    },
-    {
-      title: 'DATE DEMANDE',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      align: 'center',
-      render: (date) => <span className="whitespace-nowrap">{formatDate(date)}</span>
-    },
-    {
-      title: "ACTIONS",
-      key: "actions",
-      align: "center",
-      fixed: "right",
-      render: (record) => (
-        <div className="flex items-center justify-center gap-1 whitespace-nowrap">
-          <button
-            onClick={() => showModalValidation(record)}
-            title="Valider"
-            aria-label="Valider"
-            className="p-1 rounded-full hover:bg-orange-600 text-green-800 transition hover:text-white"
-          >
-            <FaEdit className="text-lg" />
-          </button>
-
-          <button
-            onClick={() => DeleteDemande(record)}
-            title="ANNULER"
-            aria-label="ANNULER"
-            className="p-1 rounded-full text-orange-600 hover:text-white hover:bg-orange-600 transition-colors"
-          >
-            <FaRegTrashAlt className="text-lg" />
-          </button>
-
-          <button
-            onClick={() => VisualiserDemande(record.id)}
-            title="Visualiser les opérations"
-            aria-label="Visualiser les opérations"
-            className="p-1 rounded-full hover:bg-orange-600 text-green-800 transition hover:text-white"
-          >
-            <FaEye className="text-lg" />
-          </button>
-
-          <button
-            onClick={() => TelechargerDemande(record)}
-            title="Télécharger le document"
-            aria-label="Télécharger le document"
-            disabled={downloadingIds.has(record.id)}
-            className={`p-1 rounded-full transition ${
-              downloadingIds.has(record.id) 
-                ? 'bg-gray-300 cursor-not-allowed' 
-                : 'hover:bg-orange-600 text-gray-600 hover:text-white'
-            }`}
-          >
-            {downloadingIds.has(record.id) ? (
-              <Spin size="small" />
-            ) : (
-              <FaDownload className="text-lg" />
-            )}
-          </button>
-        </div>
-      ),
+ const columns = [
+  {
+    title: 'RÉFÉRENCE',
+    dataIndex: 'reference',
+    key: 'reference',
+    align: 'left',
+    render: (text) => (
+      <div className="whitespace-nowrap overflow-hidden text-ellipsis w-full" title={text}>
+        {text || '-'}
+      </div>
+    ),
+  },
+  {
+    title: 'DÉBIT',
+    dataIndex: 'debitAmount',
+    key: 'debitAmount',
+    align: 'center',
+    render: (amount) => <span className="whitespace-nowrap">{formatAmount(amount)}</span>
+  },
+  {
+    title: 'CRÉDIT',
+    dataIndex: 'creditAmount',
+    key: 'creditAmount',
+    align: 'center',
+    render: (amount) => <span className="whitespace-nowrap">{formatAmount(amount)}</span>
+  },
+  {
+    title: 'ÉQUILIBRE',
+    dataIndex: 'isBalanced',
+    key: 'isBalanced',
+    align: 'center',
+    render: (amount) => <span className="whitespace-nowrap">{formatAmount(amount)}</span>
+  },
+  {
+    title: 'INTÉGRATION',
+    dataIndex: 'integrationStatus',
+    key: 'integrationStatus',
+    align: 'center',
+    render: (status) => {
+      const config = getStatusConfig(status);
+      const colorMap = {
+        green: 'bg-green-100 text-green-800',
+        red: 'bg-red-100 text-red-800',
+        blue: 'bg-blue-100 text-blue-800',
+        default: 'bg-gray-100 text-gray-800'
+      };
+      return (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${colorMap[config.color]}`}
+        >
+          {config.label}
+        </span>
+      );
     }
-  ];
+  },
+  {
+    title: 'OPÉRATION',
+    dataIndex: 'operationStatus',
+    key: 'operationStatus',
+    align: 'center',
+    render: (status) => {
+      const config = getStatusConfig(status);
+      const colorMap = {
+        green: 'bg-green-100 text-green-800',
+        red: 'bg-red-100 text-red-800',
+        blue: 'bg-blue-100 text-blue-800',
+        default: 'bg-gray-100 text-gray-800'
+      };
+      return (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${colorMap[config.color]}`}
+        >
+          {config.label}
+        </span>
+      );
+    }
+  },
+  {
+    title: 'ERREURS',
+    dataIndex: 'errors',
+    key: 'errors',
+    align: 'center',
+    render: (errors) => {
+      const count = Array.isArray(errors) ? errors.length : errors || 0;
+      return (
+        <button
+          className="flex items-center gap-2 px-3 py-1 rounded-lg bg-red-600 text-white font-semibold text-sm hover:bg-red-700 active:scale-95 transition"
+          title="Cliquez pour voir les erreurs"
+          onClick={() => alert(`Il y a ${count} erreur(s)`)} // remplacer par ton handler
+        >
+          <ExclamationCircleOutlined className="text-white text-base" />
+          <span>{count} erreur{count > 1 ? 's' : ''}</span>
+        </button>
+      );
+    }
+  },
+  {
+    title: 'DEMANDEUR',
+    key: 'createdBy',
+    align: 'center',
+    render: (record) => (
+      <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+        {record.createdBy ? (
+          <span title={`${record.createdBy.firstName} ${record.createdBy.lastName} (${record.createdBy.matricule})`}>
+            {record.createdBy.firstName} {record.createdBy.lastName} ({record.createdBy.matricule})
+          </span>
+        ) : 'N/A'}
+      </div>
+    )
+  },
+  {
+    title: 'VALIDÉ PAR',
+    key: 'validatedBy',
+    align: 'center',
+    render: (record) => (
+      <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+        {record.validatedBy ? (
+          <>
+            {record.validatedBy.firstName} {record.validatedBy.lastName} ({record.validatedBy.matricule})
+          </>
+        ) : 'N/A'}
+      </div>
+    )
+  },
+  {
+    title: 'DATE DEMANDE',
+    dataIndex: 'createdAt',
+    key: 'createdAt',
+    align: 'center',
+    render: (date) => <span className="whitespace-nowrap">{formatDate(date)}</span>
+  },
+  {
+    title: "ACTIONS",
+    key: "actions",
+    align: "center",
+    fixed: "right",
+    render: (record) => (
+      <div className="flex items-center justify-center gap-1 whitespace-nowrap">
+        <button
+          onClick={() => showModalValidation(record)}
+          title="Valider"
+          aria-label="Valider"
+          className="p-1 rounded-full hover:bg-orange-600 text-green-800 transition hover:text-white"
+        >
+          <FaEdit className="text-lg" />
+        </button>
+
+        <button
+          onClick={() => DeleteDemande(record)}
+          title="ANNULER"
+          aria-label="ANNULER"
+          className="p-1 rounded-full text-orange-600 hover:text-white hover:bg-orange-600 transition-colors"
+        >
+          <FaRegTrashAlt className="text-lg" />
+        </button>
+
+        <button
+          onClick={() => VisualiserDemande(record.id)}
+          title="Visualiser les opérations"
+          aria-label="Visualiser les opérations"
+          className="p-1 rounded-full hover:bg-orange-600 text-green-800 transition hover:text-white"
+        >
+          <FaEye className="text-lg" />
+        </button>
+
+        <button
+          onClick={() => TelechargerDemande(record)}
+          title="Télécharger le document"
+          aria-label="Télécharger le document"
+          disabled={downloadingIds.has(record.id)}
+          className={`p-1 rounded-full transition ${
+            downloadingIds.has(record.id) 
+              ? 'bg-gray-300 cursor-not-allowed' 
+              : 'hover:bg-orange-600 text-gray-600 hover:text-white'
+          }`}
+        >
+          {downloadingIds.has(record.id) ? (
+            <Spin size="small" />
+          ) : (
+            <FaDownload className="text-lg" />
+          )}
+        </button>
+      </div>
+    ),
+  }
+];
+
 
   return (
     <div className="w-full no-scrollbar mr-10">
@@ -575,124 +498,119 @@ export default function Demande() {
         <div className="h-[85vh] overflow-y-auto">
           <div className="sticky top-0 bg-white z-10 pb-2 border-b border-gray-200 shadow-sm">
             <div className="relative">
-              <div className="overflow-x-auto">
-                <div className="grid grid-cols-6 gap-4 items-end min-w-[1100px]">
-                  
-                  {/* Bouton de réinitialisation */}
-                  <div className="flex flex-col">
-                    <label htmlFor="reset" className="block text-sm font-medium text-gray-700 mb-1">
-                      EFFACER
-                    </label>
-                    <Button
-                      onClick={handleClearSearch}
-                      className="green-2"
-                      disabled={isClearing}
-                    >
-                      {isClearing ? <Spin size="small" /> : 'Effacer'}
-                    </Button>
-                  </div>
+              <div className="overflow-x-auto pb-1">
+  <div className="grid grid-cols-6 gap-4 items-end min-w-[1100px]">
+      
+      {/* Bouton de réinitialisation */}
+      <div className="flex flex-col">
+        <label
+          htmlFor="reset"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          EFFACER
+        </label>
+        <Button
+          onClick={handleClearSearch}
+          size='large'
+          className="w-full green-2"
+          disabled={isClearing} 
+        >
+          {isClearing ? <Spin size="small" /> : "Effacer"}
+        </Button>
+      </div>
 
-                  {/* Champ référence */}
-                  <div className="flex flex-col">
-                    <label htmlFor="reference" className="block text-sm font-medium text-gray-700 mb-1">
-                      RÉFÉRENCE
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaSearch className="text-gray-400" />
-                      </div>
-                      <Input
-                        id="reference"
-                        placeholder="Référence"
-                        value={searchReference}
-                        onChange={(e) => setSearchReference(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
+      {/* Champ statut opération */}
+      <div className="flex flex-col">
+        <label
+          htmlFor="operationStatus"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          STATUT OPÉRATION
+        </label>
+        <Select
+          id="operationStatus"
+          size='large'
+          value={searchOperationStatus}
+          onChange={setSearchOperationStatus}
+          placeholder="Tous les statuts"
+          allowClear
+          className="w-full"
+        >
+          <Option value="">Tous les statuts</Option>
+          {operationStatusOptions.map((opt) => (
+            <Option key={opt.value} value={opt.value}>
+              {opt.label}
+            </Option>
+          ))}
+        </Select>
+      </div>
 
-                  {/* Champ statut opération */}
-                  <div className="flex flex-col">
-                    <label htmlFor="operationStatus" className="block text-sm font-medium text-gray-700 mb-1">
-                      STATUT OPÉRATION
-                    </label>
-                    <Select
-                      id="operationStatus"
-                      value={searchOperationStatus}
-                      onChange={setSearchOperationStatus}
-                      placeholder="TOUS LES STATUTS"
-                      allowClear
-                    >
-                      <Option value="VALIDEE">VALIDEE</Option>
-                      <Option value="NON_VALIDEE">NON VALIDEE</Option>
-                      <Option value="EN_TRAITEMENT">EN TRAITEMENT</Option>
-                    </Select>
-                  </div>
+      {/* Champ Demandeur */}
+      <div className="flex flex-col">
+        <label
+          htmlFor="demandeur"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          DEMANDEUR
+        </label>
+        <Select
+          id="demandeur"
+          size='large'
+          showSearch
+          allowClear
+          placeholder="Rechercher un demandeur"
+          value={searchCreatedById || undefined}
+          onSearch={handleDemandeurSearch}
+          onSelect={setSearchCreatedById}
+          className="w-full"
+          filterOption={(input, option) =>
+            option?.children.toLowerCase().includes(input.toLowerCase())
+          }
+        >
+          {demandeursData?.map((demandeur) => (
+            <Option key={demandeur.id} value={demandeur.id}>
+              {`${demandeur.firstName} ${demandeur.lastName} (${demandeur.matricule})`}
+            </Option>
+          ))}
+        </Select>
+      </div>
 
-                  {/* Champ Demandeur */}
-                  <div className="flex flex-col">
-                    <label htmlFor="demandeur" className="block text-sm font-medium text-gray-700 mb-1">
-                      DEMANDEUR
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                        <FaSearch className="text-gray-400" />
-                      </div>
-                      <Select
-                        id="demandeur"
-                        showSearch
-                        allowClear
-                        placeholder="Rechercher un demandeur"
-                        value={searchCreatedById || undefined}
-                        onSelect={handleDemandeurSelect}
-                        onSearch={handleDemandeurSearch}
-                        onClear={() => {
-                          setSearchCreatedById('');
-                          setSearchDemandeurText('');
-                        }}
-                        loading={demandeursLoading}
-                        filterOption={false}
-                        notFoundContent={demandeursLoading ? 'Chargement...' : 'Aucun demandeur trouvé'}
-                        className="w-full"
-                        style={{ paddingLeft: '2.5rem' }}
-                        getPopupContainer={getPopupContainer}
-                      >
-                        {demandeurs?.map((demandeur) => (
-                          <Option key={demandeur.id} value={demandeur.id}>
-                            {`${demandeur.firstName} ${demandeur.lastName} (${demandeur.matricule})`}
-                          </Option>
-                        ))}
-                      </Select>
-                    </div>
-                  </div>
+      {/* Champ date de début */}
+      <div className="flex flex-col">
+        <label
+          htmlFor="startDate"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          DATE DE DÉBUT
+        </label>
+        <DatePicker
+          id="startDate"
+          size='large'
+          value={startDate}
+          onChange={(date) => setStartDate(date)}
+          className="w-full"
+          format="YYYY-MM-DD"
+        />
+      </div>
 
-                  {/* Champ date de début */}
-                  <div className="flex flex-col">
-                    <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      DATE DE DÉBUT
-                    </label>
-                    <Input
-                      type="date"
-                      id="startDate"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-
-                  {/* Champ date de fin */}
-                  <div className="flex flex-col">
-                    <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      DATE DE FIN
-                    </label>
-                    <Input
-                      type="date"
-                      id="endDate"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-
-                </div>
+      {/* Champ date de fin */}
+      <div className="flex flex-col">
+        <label
+          htmlFor="endDate"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          DATE DE FIN
+        </label>
+        <DatePicker
+          id="endDate"
+          size='large'
+          value={endDate}
+          onChange={(date) => setEndDate(date)}
+          className="w-full"
+          format="YYYY-MM-DD"
+        />
+      </div>
+    </div>
               </div>
             </div>
           </div>
@@ -708,7 +626,7 @@ export default function Demande() {
               ) : (
                 <Table
                   columns={columns}
-                  dataSource={data.content}
+                  dataSource={DemandeData}
                   rowKey="id"
                   loading={loading}
                   scroll={{ x: 1600, y: '57vh' }}
@@ -717,16 +635,15 @@ export default function Demande() {
                   pagination={{
                     current: currentPage,
                     pageSize: pageSize,
-                    total: data.totalElements,
+                    total:totalElements,
                     showSizeChanger: true,
                     showQuickJumper: true,
                     showTotal: (total, range) => `${range[0]}-${range[1]} sur ${total} demandes`,
                     pageSizeOptions: ['10', '20', '50', '100'],
                   }}
                   onChange={handleTableChange}
-                  getPopupContainer={getPopupContainer}
                   locale={{
-                    emptyText: hasActiveFilters 
+                    emptyText:demandeursData.length === 0
                       ? "Aucune demande trouvée avec ces critères" 
                       : "Aucune demande disponible"
                   }}
